@@ -447,38 +447,79 @@ class HomePage extends StatefulWidget {
   @override
   State<HomePage> createState() => _HomePageState();
 }
+
 class _HomePageState extends State<HomePage> {
+  final supabase = Supabase.instance.client;
+
   int _selectedIndex = 0;
-  String selectedCity = 'Surabaya';
 
-  final List<Map<String, dynamic>> universities = [
-    {
-      'name': 'Institut Teknologi Sepuluh Nop...',
-      'icon': Icons.school,
-    },
-    {
-      'name': 'Universitas Airlangga',
-      'icon': Icons.school,
-    },
-    {
-      'name': 'Universitas Negeri Surabaya',
-      'icon': Icons.school,
-    },
-    {
-      'name': 'UIN Sunan Ampel',
-      'icon': Icons.school,
-    },
-    {
-      'name': 'UPN Veteran Jawa Timur',
-      'icon': Icons.school,
-    },
-  ];
+  String? selectedCity; // diambil dari Supabase
+  List<String> cities = [];
 
+  List<Map<String, dynamic>> universities = [];
+
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCities();
+  }
+
+  // ------------------------------------------------------------
+  // FETCH DATA DARI SUPABASE
+  // ------------------------------------------------------------
+
+  Future<void> fetchCities() async {
+    try {
+      final res = await supabase.from('cities').select('name');
+      cities = res.map<String>((row) => row['name'] as String).toList();
+
+      if (selectedCity == null && cities.isNotEmpty) {
+        selectedCity = cities.first;
+      }
+
+      await fetchUniversities();
+
+      setState(() {});
+    } catch (e) {
+      print("Error fetch cities: $e");
+    }
+  }
+
+  Future<void> fetchUniversities() async {
+    try {
+      setState(() => isLoading = true);
+
+      final res = await supabase
+          .from('universities')
+          .select('name, city_id, cities!inner(name)')
+          .eq('cities.name', selectedCity!);
+
+      universities = res
+          .map<Map<String, dynamic>>((u) => {
+                'name': u['name'],
+                'icon': Icons.school,
+              })
+          .toList();
+
+      setState(() => isLoading = false);
+    } catch (e) {
+      print("Error fetch universities: $e");
+      setState(() => isLoading = false);
+    }
+  }
+
+  // bottom navbar
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
+
+  // ------------------------------------------------------------
+  // UI
+  // ------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -497,7 +538,7 @@ class _HomePageState extends State<HomePage> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header Section
+              // HEADER
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -510,15 +551,12 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Center(
+                      child: const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(
-                              Icons.restaurant,
-                              size: 35,
-                              color: Color(0xFFD32F2F),
-                            ),
+                          children: [
+                            Icon(Icons.restaurant,
+                                size: 35, color: Color(0xFFD32F2F)),
                             Text(
                               'Mangapp',
                               style: TextStyle(
@@ -532,15 +570,15 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Location Selector
+
+                    // TITLE
                     const Text(
                       'Pilih lokasi Anda',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 14),
                     ),
                     const SizedBox(height: 8),
+
+                    // DROPDOWN CITY (FETCH SUPABASE)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
@@ -549,18 +587,15 @@ class _HomePageState extends State<HomePage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.location_on,
-                            color: Color(0xFFD32F2F),
-                          ),
+                          const Icon(Icons.location_on,
+                              color: Color(0xFFD32F2F)),
                           const SizedBox(width: 8),
                           Expanded(
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: selectedCity,
                                 isExpanded: true,
-                                items: ['Surabaya', 'Jakarta', 'Bandung', 'Yogyakarta']
-                                    .map((String value) {
+                                items: cities.map((value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
                                     child: Text(
@@ -572,10 +607,10 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   );
                                 }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    selectedCity = newValue!;
-                                  });
+                                onChanged: (String? newValue) async {
+                                  selectedCity = newValue;
+                                  await fetchUniversities();
+                                  setState(() {});
                                 },
                               ),
                             ),
@@ -586,7 +621,8 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
-              // Content Section
+
+              // CONTENT
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
@@ -604,43 +640,44 @@ class _HomePageState extends State<HomePage> {
                         child: Text(
                           'Perguruan Tinggi',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
+
+                      // UNIVERSITIES LIST
                       Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: universities.length,
-                          itemBuilder: (context, index) {
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.grey.shade300,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                leading: Icon(
-                                  universities[index]['icon'],
-                                  color: Colors.black87,
-                                ),
-                                title: Text(
-                                  universities[index]['name'],
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                onTap: () {
-                                  // Navigate to university detail
+                        child: isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : ListView.builder(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                itemCount: universities.length,
+                                itemBuilder: (context, index) {
+                                  return Container(
+                                    margin:
+                                        const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: Colors.grey.shade300),
+                                      borderRadius:
+                                          BorderRadius.circular(12),
+                                    ),
+                                    child: ListTile(
+                                      leading: Icon(
+                                        universities[index]['icon'],
+                                        color: Colors.black87,
+                                      ),
+                                      title: Text(
+                                        universities[index]['name'],
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  );
                                 },
                               ),
-                            );
-                          },
-                        ),
                       ),
                     ],
                   ),
@@ -650,6 +687,8 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+
+      // BOTTOM NAV
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -662,23 +701,13 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         child: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
             BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: '',
-            ),
+                icon: Icon(Icons.favorite_border), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.history), label: ''),
             BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_border),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              label: '',
-            ),
+                icon: Icon(Icons.person_outline), label: ''),
           ],
           currentIndex: _selectedIndex,
           selectedItemColor: const Color(0xFFD32F2F),
