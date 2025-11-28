@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "C:/Flutter/mangapp/windows"
+    "cmake.sourceDirectory": "C:/Flutter/mangapp/windows",
+    "cmake.ignoreCMakeListsMissing": true
 }
