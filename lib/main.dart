@@ -1,23 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://oxxahfjamjbxukkilnkj.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94eGFoZmphbWpieHVra2lsbmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNjM5NzYsImV4cCI6MjA3OTgzOTk3Nn0.jQ1uVCCdOYrwjTLZg3Oh--VTf-UTC2pG5tjGIX1coqo',
+  );
+
   runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mangapp',
-      theme: ThemeData(
-        useMaterial3: true,
-        fontFamily: 'Gilroy',
-      ),
-      home: const LoginScreen(),
-    );
-  }
 }
 
 class LoginScreen extends StatefulWidget {
@@ -324,7 +317,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Forgot password
                       Align(
-                        alignment: Alignment.right,
+                        alignment: Alignment.centerRight,
                         child: Text(
                           'Forgot password?',
                           style: TextStyle(
@@ -342,7 +335,43 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         height: 45,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () async {
+                            final email = _usernameController.text.trim();
+                            final password = _passwordController.text;
+
+                            try {
+                              await Supabase.instance.client.auth
+                                  .signInWithPassword(
+                                email: email,
+                                password: password,
+                              );
+
+                              final user = Supabase.instance.client.auth.currentUser;
+                              if (user != null) {
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Login berhasil')),
+                                );
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (_) => const MyHomePage(
+                                      title: 'Mangapp Home',
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Login gagal')),
+                                );
+                              }
+                            } catch (e) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
+                            }
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFA22523),
                             shape: RoundedRectangleBorder(
@@ -396,6 +425,22 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Mangapp',
+      theme: ThemeData(
+        useMaterial3: true,
+        fontFamily: 'Gilroy',
+      ),
+      home: const LoginScreen(),
     );
   }
 }
