@@ -2,6 +2,17 @@
 
 A new Flutter project.
 
+MANGAPP - KELOMPOK 10
+Member:
+1. Clay Amsal Sebastian Hutabarat - 5026231132
+2. Muhammad Rifqi Alfareza Santosa - 5026231133
+3. Muhammad Naufal Erwin Effendi - 5026231152
+4. Muhammad Daniel Alfarisi - 5026231161
+5. Daniel Sandi Bratanata Aritonang - 5026231216
+6. Davin Jonathan Tanus - 5026231131
+
+
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
