@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:ui';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -345,7 +346,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Login button
                       SizedBox(
                         width: double.infinity,
                         height: 45,
@@ -452,12 +452,9 @@ class _HomePageState extends State<HomePage> {
   final supabase = Supabase.instance.client;
 
   int _selectedIndex = 0;
-
-  String? selectedCity; // diambil dari Supabase
+  String? selectedCity;
   List<String> cities = [];
-
   List<Map<String, dynamic>> universities = [];
-
   bool isLoading = true;
 
   @override
@@ -465,10 +462,6 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     fetchCities();
   }
-
-  // ------------------------------------------------------------
-  // FETCH DATA DARI SUPABASE
-  // ------------------------------------------------------------
 
   Future<void> fetchCities() async {
     try {
@@ -480,7 +473,6 @@ class _HomePageState extends State<HomePage> {
       }
 
       await fetchUniversities();
-
       setState(() {});
     } catch (e) {
       print("Error fetch cities: $e");
@@ -490,7 +482,6 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchUniversities() async {
     try {
       setState(() => isLoading = true);
-
       final res = await supabase
           .from('universities')
           .select('name, city_id, cities!inner(name)')
@@ -510,170 +501,127 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // bottom navbar
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  // ------------------------------------------------------------
-  // UI
-  // ------------------------------------------------------------
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFD32F2F),
-              Color(0xFFB71C1C),
-            ],
+            colors: [Color(0xFFE53935), Color(0xFFC62828)],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // HEADER
               Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 20),
                 child: Column(
                   children: [
-                    // Logo
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.restaurant,
-                                size: 35, color: Color(0xFFD32F2F)),
-                            Text(
-                              'Mangapp',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFD32F2F),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    Image.network(
+                      'https://via.placeholder.com/150/FFFFFF/D32F2F?text=Mangapp', // ganti dengan asset/logo sebenarnya
+                      height: 100,
+                      colorBlendMode: BlendMode.srcATop,
+                      color: Colors.white.withOpacity(0.9),
                     ),
-                    const SizedBox(height: 20),
-
-                    // TITLE
+                    const SizedBox(height: 30),
                     const Text(
                       'Pilih lokasi Anda',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
-                    const SizedBox(height: 8),
-
-                    // DROPDOWN CITY (FETCH SUPABASE)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.location_on,
-                              color: Color(0xFFD32F2F)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: selectedCity,
-                                isExpanded: true,
-                                items: cities.map((value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(
-                                      value,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) async {
-                                  selectedCity = newValue;
-                                  await fetchUniversities();
-                                  setState(() {});
-                                },
-                              ),
-                            ),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
                           ),
-                        ],
+                          child: Row(
+                            children: [
+                              const Icon(Icons.location_on, color: Colors.white, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: selectedCity,
+                                    dropdownColor: const Color(0xFFE53935),
+                                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+                                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                                    isExpanded: true,
+                                    items: cities.map((city) {
+                                      return DropdownMenuItem(value: city, child: Text(city));
+                                    }).toList(),
+                                    onChanged: (value) async {
+                                      selectedCity = value;
+                                      await fetchUniversities();
+                                      setState(() {});
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // CONTENT
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Padding(
-                        padding: EdgeInsets.all(20.0),
+                        padding: EdgeInsets.fromLTRB(24, 32, 24, 16),
                         child: Text(
                           'Perguruan Tinggi',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                       ),
-
-                      // UNIVERSITIES LIST
                       Expanded(
                         child: isLoading
                             ? const Center(child: CircularProgressIndicator())
                             : ListView.builder(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 20),
+                                padding: const EdgeInsets.symmetric(horizontal: 24),
                                 itemCount: universities.length,
                                 itemBuilder: (context, index) {
                                   return Container(
-                                    margin:
-                                        const EdgeInsets.only(bottom: 12),
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                                     decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: Colors.grey.shade300),
-                                      borderRadius:
-                                          BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.grey.shade300),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
-                                    child: ListTile(
-                                      leading: Icon(
-                                        universities[index]['icon'],
-                                        color: Colors.black87,
-                                      ),
-                                      title: Text(
-                                        universities[index]['name'],
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
+                                    child: Row(
+                                      children: [
+                                        Icon(universities[index]['icon'], color: Colors.black87),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Text(
+                                            universities[index]['name'],
+                                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ),
                                   );
                                 },
@@ -688,36 +636,27 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
 
-      // BOTTOM NAV
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 1,
-              blurRadius: 10,
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.favorite_border), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: ''),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline), label: ''),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: const Color(0xFFD32F2F),
-          unselectedItemColor: Colors.grey,
-          type: BottomNavigationBarType.fixed,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          onTap: _onItemTapped,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0), // agar tidak blur isi navbar
+          child: BottomNavigationBar(
+            backgroundColor: const Color(0xFFE53935).withOpacity(0.95),
+            unselectedItemColor: Colors.white.withOpacity(0.6),
+            selectedItemColor: Colors.white,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            type: BottomNavigationBarType.fixed,
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            elevation: 0,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.history), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+            ],
+          ),
         ),
       ),
     );
