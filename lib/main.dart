@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
@@ -461,6 +462,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String _selectedUniversityName = '';
   List<Map<String, dynamic>> _universities = [];
   int? _selectedUniversityId;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -586,6 +588,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    // TODO: handle navigation between tabs if needed
+  }
+
   Future<void> _toggleFavorite(int placeId) async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
@@ -631,7 +640,91 @@ class _MyHomePageState extends State<MyHomePage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error toggling favourite: $e')));
     }
   }
-
+Widget _buildLocationHeader() {
+    return Padding(
+      // Memberi jarak kiri-kanan agar tidak menempel ke layar
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _showUniversitySelector, // Memanggil fungsi modal saat diklik
+          borderRadius: BorderRadius.circular(50), // Efek ripple bulat
+          child: Container(
+            padding: const EdgeInsets.all(6.0), // Padding dalam container merah
+            decoration: BoxDecoration(
+              // Warna merah sesuai tema (diambil dari kode Anda: 0xFFAA2623 / 0xFFA22523)
+              color: const Color(0xFFAA2623), 
+              borderRadius: BorderRadius.circular(50), // Membuat sudut sangat bulat (kapsul)
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // 1. Ikon Pin Lokasi dengan Background Putih
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.location_on, // Ikon pin
+                    color: Color(0xFFAA2623), // Warna ikon merah
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                
+                // 2. Teks Lokasi (Label dan Nama Universitas)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Lokasi',
+                        style: TextStyle(
+                          color: Colors.white70, // Putih agak transparan
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        // Menampilkan nama universitas atau default jika null
+                        _selectedUniversityName != null && _selectedUniversityName!.isNotEmpty
+                            ? _selectedUniversityName!
+                            : 'Pilih Lokasi', 
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14, // Sesuaikan ukuran font
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis, // Titik-titik (...) jika teks terlalu panjang
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // 3. Ikon Panah ke Bawah
+                const Padding(
+                  padding: EdgeInsets.only(right: 12.0),
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
   void _showUniversitySelector() {
     showModalBottomSheet(
       context: context,
@@ -829,29 +922,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Location pill (tap to change university)
-                  GestureDetector(
-                    onTap: () {
-                      if (_universities.isNotEmpty) {
-                        _showUniversitySelector();
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEDEB),
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.place, color: Colors.white),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(_selectedUniversityName, style: const TextStyle(color: Colors.white))),
-                          const Icon(Icons.keyboard_arrow_down, color: Colors.white),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // Location pill (centralized widget)
+                  _buildLocationHeader(),
                 ],
               ),
             ),
@@ -888,54 +960,37 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
 
-      // Bottom nav with centered home button
-      bottomNavigationBar: Container(
-        height: 74,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        decoration: const BoxDecoration(color: Colors.transparent),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: const [
-                      Icon(Icons.favorite_border, color: Color(0xFFBDBDBD)),
-                      Icon(Icons.history, color: Color(0xFFBDBDBD)),
-                      SizedBox(width: 64), // space for center button
-                      Icon(Icons.person_outline, color: Color(0xFFBDBDBD)),
-                      Icon(Icons.search, color: Color(0xFFBDBDBD)),
-                    ],
-                  ),
-                ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE53935).withOpacity(0.95),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: BottomNavigationBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                selectedItemColor: Colors.white,
+                unselectedItemColor: Colors.white.withOpacity(0.5),
+                showSelectedLabels: false,
+                showUnselectedLabels: false,
+                type: BottomNavigationBarType.fixed,
+                currentIndex: _selectedIndex,
+                onTap: _onItemTapped,
+                items: [
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 0 ? Icons.home : Icons.home_outlined), label: ''),
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 1 ? Icons.favorite : Icons.favorite_border), label: ''),
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 2 ? Icons.history : Icons.history_toggle_off), label: ''),
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 3 ? Icons.person : Icons.person_outline), label: ''),
+                ],
               ),
             ),
-
-            // center floating red home
-            Positioned.fill(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Container(
-                  width: 84,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFA22523),
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8)],
-                  ),
-                  child: const Center(child: Icon(Icons.home_outlined, color: Colors.white)),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
