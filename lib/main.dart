@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:ui';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -345,7 +346,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Login button
                       SizedBox(
                         width: double.infinity,
                         height: 45,
@@ -452,12 +452,9 @@ class _HomePageState extends State<HomePage> {
   final supabase = Supabase.instance.client;
 
   int _selectedIndex = 0;
-
-  String? selectedCity; // diambil dari Supabase
+  String? selectedCity;
   List<String> cities = [];
-
   List<Map<String, dynamic>> universities = [];
-
   bool isLoading = true;
 
   @override
@@ -466,217 +463,141 @@ class _HomePageState extends State<HomePage> {
     fetchCities();
   }
 
-  // ------------------------------------------------------------
-  // FETCH DATA DARI SUPABASE
-  // ------------------------------------------------------------
-
   Future<void> fetchCities() async {
     try {
       final res = await supabase.from('cities').select('name');
       cities = res.map<String>((row) => row['name'] as String).toList();
-
-      if (selectedCity == null && cities.isNotEmpty) {
-        selectedCity = cities.first;
-      }
-
+      if (selectedCity == null && cities.isNotEmpty) selectedCity = cities.first;
       await fetchUniversities();
-
       setState(() {});
-    } catch (e) {
-      print("Error fetch cities: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> fetchUniversities() async {
     try {
       setState(() => isLoading = true);
-
       final res = await supabase
           .from('universities')
           .select('name, city_id, cities!inner(name)')
           .eq('cities.name', selectedCity!);
 
       universities = res
-          .map<Map<String, dynamic>>((u) => {
-                'name': u['name'],
-                'icon': Icons.school,
-              })
+          .map<Map<String, dynamic>>((u) => {'name': u['name'], 'icon': Icons.school})
           .toList();
 
       setState(() => isLoading = false);
     } catch (e) {
-      print("Error fetch universities: $e");
       setState(() => isLoading = false);
     }
   }
 
-  // bottom navbar
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
-
-  // ------------------------------------------------------------
-  // UI
-  // ------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFD32F2F),
-              Color(0xFFB71C1C),
-            ],
+            colors: [Color(0xFFE53935), Color(0xFFC62828)],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // HEADER
               Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 20),
                 child: Column(
                   children: [
-                    // Logo
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.restaurant,
-                                size: 35, color: Color(0xFFD32F2F)),
-                            Text(
-                              'Mangapp',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFD32F2F),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    Image.network(
+                      'https://via.placeholder.com/150/FFFFFF/D32F2F?text=Mangapp',
+                      height: 100,
+                      color: Colors.white,
                     ),
-                    const SizedBox(height: 20),
-
-                    // TITLE
-                    const Text(
-                      'Pilih lokasi Anda',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // DROPDOWN CITY (FETCH SUPABASE)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.location_on,
-                              color: Color(0xFFD32F2F)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: selectedCity,
-                                isExpanded: true,
-                                items: cities.map((value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(
-                                      value,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) async {
-                                  selectedCity = newValue;
-                                  await fetchUniversities();
-                                  setState(() {});
-                                },
-                              ),
-                            ),
+                    const SizedBox(height: 30),
+                    const Text('Pilih lokasi Anda', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: Colors.white.withOpacity(0.3)),
                           ),
-                        ],
+                          child: Row(
+                            children: [
+                              const Icon(Icons.location_on, color: Colors.white),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: selectedCity,
+                                    dropdownColor: const Color(0xFFE53935),
+                                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+                                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                                    isExpanded: true,
+                                    items: cities
+                                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                        .toList(),
+                                    onChanged: (v) async {
+                                      selectedCity = v;
+                                      await fetchUniversities();
+                                      setState(() {});
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // CONTENT
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Padding(
-                        padding: EdgeInsets.all(20.0),
-                        child: Text(
-                          'Perguruan Tinggi',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
+                        padding: EdgeInsets.fromLTRB(24, 32, 24, 16),
+                        child: Text('Perguruan Tinggi', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       ),
-
-                      // UNIVERSITIES LIST
                       Expanded(
                         child: isLoading
                             ? const Center(child: CircularProgressIndicator())
                             : ListView.builder(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 20),
+                                padding: const EdgeInsets.symmetric(horizontal: 24),
                                 itemCount: universities.length,
-                                itemBuilder: (context, index) {
-                                  return Container(
-                                    margin:
-                                        const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: Colors.grey.shade300),
-                                      borderRadius:
-                                          BorderRadius.circular(12),
-                                    ),
-                                    child: ListTile(
-                                      leading: Icon(
-                                        universities[index]['icon'],
-                                        color: Colors.black87,
-                                      ),
-                                      title: Text(
-                                        universities[index]['name'],
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
+                                itemBuilder: (_, i) => Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(universities[i]['icon'], color: Colors.black87),
+                                      const SizedBox(width: 16),
+                                      Text(universities[i]['name'], style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                                    ],
+                                  ),
+                                ),
                               ),
                       ),
                     ],
@@ -687,37 +608,37 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-
-      // BOTTOM NAV
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 1,
-              blurRadius: 10,
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE53935).withOpacity(0.95),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: BottomNavigationBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                selectedItemColor: Colors.white,
+                unselectedItemColor: Colors.white.withOpacity(0.5),
+                showSelectedLabels: false,
+                showUnselectedLabels: false,
+                type: BottomNavigationBarType.fixed,
+                currentIndex: _selectedIndex,
+                onTap: _onItemTapped,
+                items: [
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 0 ? Icons.home : Icons.home_outlined), label: ''),
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 1 ? Icons.favorite : Icons.favorite_border), label: ''),
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 2 ? Icons.history : Icons.history_toggle_off), label: ''),
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 3 ? Icons.person : Icons.person_outline), label: ''),
+                ],
+              ),
             ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.favorite_border), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: ''),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline), label: ''),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: const Color(0xFFD32F2F),
-          unselectedItemColor: Colors.grey,
-          type: BottomNavigationBarType.fixed,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          onTap: _onItemTapped,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
+          ),
         ),
       ),
     );
