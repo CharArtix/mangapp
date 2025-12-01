@@ -448,15 +448,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -464,69 +455,470 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  List<Map<String, dynamic>> _places = [];
+  bool _loading = true;
+  List<String> _categories = [];
+  String _selectedUniversityName = 'Pilih Lokasi';
+  List<Map<String, dynamic>> _universities = [];
+  int? _selectedUniversityId;
 
   @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+  void initState() {
+    super.initState();
+    _loadUniversities();
+    _loadCategories();
+    _loadPlaces();
+  }
+
+  Future<void> _loadUniversities() async {
+    try {
+      final res = await Supabase.instance.client.from('universities').select().order('name');
+      if (res is List) {
+        final list = res.cast<Map<String, dynamic>>().toList();
+        setState(() {
+          _universities = list;
+          if (list.isNotEmpty) {
+            final first = list.first;
+            _selectedUniversityId = (first['id'] is int) ? first['id'] as int : int.tryParse(first['id'].toString());
+            _selectedUniversityName = first['name'] ?? 'Pilih Lokasi';
+          }
+        });
+      }
+    } catch (_) {
+      // ignore failures for now
+    }
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final res = await Supabase.instance.client.from('menus').select('name');
+      if (res is List) {
+        final names = <String>[];
+        for (final item in res.cast<Map<String, dynamic>>()) {
+          final n = item['name']?.toString();
+          if (n != null && n.isNotEmpty) names.add(n);
+        }
+        final uniq = names.toSet().toList();
+        setState(() {
+          _categories = ['Semua', ...uniq];
+        });
+      }
+    } catch (_) {
+      // fallback to defaults
+      setState(() {
+        _categories = ['Semua', 'Ayam Geprek', 'Masakan Rumahan', 'Bakso', 'Pizza'];
+      });
+    }
+  }
+
+  Future<void> _loadPlaces() async {
+    setState(() {
+      _loading = true;
+    });
+
+    try {
+      // Select places and embed favorites to compute counts and whether current user favorited
+      final user = Supabase.instance.client.auth.currentUser;
+
+      final res = (_selectedUniversityId != null)
+          ? await Supabase.instance.client
+              .from('places')
+              .select('*, favorites(*)')
+                      .eq('university_id', _selectedUniversityId!)
+              .order('rating', ascending: false)
+          : await Supabase.instance.client
+              .from('places')
+              .select('*, favorites(*)')
+              .order('rating', ascending: false);
+
+      if (res is List) {
+        final List<Map<String, dynamic>> places = [];
+        for (final item in res.cast<Map<String, dynamic>>()) {
+          final favs = (item['favorites'] is List) ? List<Map<String, dynamic>>.from(item['favorites'].cast<Map<String, dynamic>>()) : <Map<String, dynamic>>[];
+          final favCount = favs.length;
+          final isFav = (user != null) ? favs.any((f) => f['user_id'] == user.id) : false;
+
+          // Create cleaned place map with convenience fields
+          final cleaned = Map<String, dynamic>.from(item);
+          cleaned['favorites_count'] = favCount;
+          cleaned['is_favorite'] = isFav;
+
+          places.add(cleaned);
+        }
+
+        setState(() {
+          _places = places;
+        });
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No places found or unexpected response')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _toggleFavorite(int placeId) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to favourite places')),
+      );
+      return;
+    }
+
+    // Optimistic update
+    final idx = _places.indexWhere((p) => p['id'] == placeId);
+    if (idx == -1) return;
+
+    final currentlyFav = _places[idx]['is_favorite'] == true;
+    setState(() {
+      _places[idx]['is_favorite'] = !currentlyFav;
+      _places[idx]['favorites_count'] = (_places[idx]['favorites_count'] ?? 0) + (currentlyFav ? -1 : 1);
+    });
+
+    try {
+      if (!currentlyFav) {
+        // insert
+        await Supabase.instance.client.from('favorites').insert({
+          'user_id': user.id,
+          'place_id': placeId,
+        });
+      } else {
+        // delete
+        await Supabase.instance.client
+            .from('favorites')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('place_id', placeId);
+      }
+    } catch (e) {
+      // revert optimistic
+      if (!mounted) return;
+      setState(() {
+        _places[idx]['is_favorite'] = currentlyFav;
+        _places[idx]['favorites_count'] = (_places[idx]['favorites_count'] ?? 0) + (currentlyFav ? 0 : -1);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error toggling favourite: $e')));
+    }
+  }
+
+  void _showUniversitySelector() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              const Text('Pilih Universitas', style: TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              ..._universities.map((u) {
+                final idRaw = u['id'];
+                final id = (idRaw is int) ? idRaw : int.tryParse(idRaw.toString());
+                final name = u['name'] ?? '';
+                final selected = id == _selectedUniversityId;
+                return ListTile(
+                  title: Text(name),
+                  trailing: selected ? const Icon(Icons.check, color: Color(0xFFA22523)) : null,
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    setState(() {
+                      _selectedUniversityId = id;
+                      _selectedUniversityName = name;
+                      _loading = true;
+                    });
+                    _loadPlaces();
+                  },
+                );
+              }).toList(),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCategoryChips() {
+    final categories = _categories.isNotEmpty ? _categories : ['Semua', 'Ayam Geprek', 'Masakan Rumahan', 'Bakso', 'Pizzazz'];
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemBuilder: (context, index) {
+          final isActive = index == 0;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: isActive ? const Color(0xFFAA2623) : Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: const Color(0xFFAA2623)),
+            ),
+            child: Center(
+              child: Text(
+                categories[index],
+                style: TextStyle(
+                  color: isActive ? Colors.white : const Color(0xFFAA2623),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          );
+        },
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemCount: categories.length,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+    );
+  }
+
+  Widget _buildPlaceCard(Map<String, dynamic> place) {
+    final name = place['name'] ?? 'Nama Tempat';
+    final price = place['price_range'] ?? 'Rp.10.000-25.000';
+    final address = place['address'] ?? 'Jl. Gebang Lor No. X';
+    final rating = (place['rating'] != null) ? place['rating'].toString() : '4.8';
+    final imageUrl = (place['image_url'] != null && place['image_url'] != '') ? place['image_url'] as String : null;
+    final favoritesCount = place['favorites_count'] ?? 0;
+    final isFav = place['is_favorite'] == true;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          children: [
+            // Left: image with rating badge
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 84,
+                    height: 84,
+                    color: Colors.grey.shade200,
+                    child: imageUrl != null
+                        ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.camera_alt_outlined, size: 36, color: Colors.grey))
+                        : const Icon(Icons.camera_alt_outlined, size: 36, color: Colors.grey),
+                  ),
+                ),
+                Positioned(
+                  top: -6,
+                  left: -6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.star, color: Color(0xFFF4B33A), size: 14),
+                        const SizedBox(width: 4),
+                        Text(rating, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 12),
+
+            // Middle: details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 6),
+                  Text(price, style: const TextStyle(color: Colors.black54)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 14, color: Colors.black54),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text(address, style: const TextStyle(color: Colors.black54))),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text('$favoritesCount orang menyukai', style: const TextStyle(color: Colors.black38, fontSize: 12)),
+                ],
+              ),
+            ),
+
+            // Right: favorite
+            Column(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    final idRaw = place['id'];
+                    final id = (idRaw is int) ? idRaw : int.tryParse(idRaw.toString()) ?? 0;
+                    _toggleFavorite(id);
+                  },
+                  icon: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: isFav ? const Color(0xFFF94931) : Colors.black54),
+                ),
+              ],
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusBar = MediaQuery.of(context).padding.top;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F6F6),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top red header with location pill
+            Container(
+              padding: EdgeInsets.only(top: statusBar, left: 16, right: 16, bottom: 18),
+              decoration: const BoxDecoration(
+                color: Color(0xFFCB3127),
+                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(22), bottomRight: Radius.circular(22)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).maybePop(),
+                        child: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Rekomendasi Mahasiswa', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Location pill (tap to change university)
+                  GestureDetector(
+                    onTap: () {
+                      if (_universities.isNotEmpty) {
+                        _showUniversitySelector();
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEDEB),
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.place, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(_selectedUniversityName, style: const TextStyle(color: Colors.white))),
+                          const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Body content
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCategoryChips(),
+                  const SizedBox(height: 8),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+
+            // List
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : RefreshIndicator(
+                      onRefresh: _loadPlaces,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 80),
+                        itemCount: _places.length,
+                        itemBuilder: (context, index) {
+                          return _buildPlaceCard(_places[index]);
+                        },
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+
+      // Bottom nav with centered home button
+      bottomNavigationBar: Container(
+        height: 74,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: const BoxDecoration(color: Colors.transparent),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: const [
+                      Icon(Icons.favorite_border, color: Color(0xFFBDBDBD)),
+                      Icon(Icons.history, color: Color(0xFFBDBDBD)),
+                      SizedBox(width: 64), // space for center button
+                      Icon(Icons.person_outline, color: Color(0xFFBDBDBD)),
+                      Icon(Icons.search, color: Color(0xFFBDBDBD)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // center floating red home
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Container(
+                  width: 84,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFA22523),
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8)],
+                  ),
+                  child: const Center(child: Icon(Icons.home_outlined, color: Colors.white)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
