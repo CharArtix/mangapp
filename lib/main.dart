@@ -467,16 +467,10 @@ class _HomePageState extends State<HomePage> {
     try {
       final res = await supabase.from('cities').select('name');
       cities = res.map<String>((row) => row['name'] as String).toList();
-
-      if (selectedCity == null && cities.isNotEmpty) {
-        selectedCity = cities.first;
-      }
-
+      if (selectedCity == null && cities.isNotEmpty) selectedCity = cities.first;
       await fetchUniversities();
       setState(() {});
-    } catch (e) {
-      print("Error fetch cities: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> fetchUniversities() async {
@@ -488,23 +482,17 @@ class _HomePageState extends State<HomePage> {
           .eq('cities.name', selectedCity!);
 
       universities = res
-          .map<Map<String, dynamic>>((u) => {
-                'name': u['name'],
-                'icon': Icons.school,
-              })
+          .map<Map<String, dynamic>>((u) => {'name': u['name'], 'icon': Icons.school})
           .toList();
 
       setState(() => isLoading = false);
     } catch (e) {
-      print("Error fetch universities: $e");
       setState(() => isLoading = false);
     }
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 
   @override
@@ -527,31 +515,27 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   children: [
                     Image.network(
-                      'https://via.placeholder.com/150/FFFFFF/D32F2F?text=Mangapp', // ganti dengan asset/logo sebenarnya
+                      'https://via.placeholder.com/150/FFFFFF/D32F2F?text=Mangapp',
                       height: 100,
-                      colorBlendMode: BlendMode.srcATop,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white,
                     ),
                     const SizedBox(height: 30),
-                    const Text(
-                      'Pilih lokasi Anda',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+                    const Text('Pilih lokasi Anda', style: TextStyle(color: Colors.white, fontSize: 16)),
                     const SizedBox(height: 12),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(30),
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                            border: Border.all(color: Colors.white.withOpacity(0.3)),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.location_on, color: Colors.white, size: 20),
+                              const Icon(Icons.location_on, color: Colors.white),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: DropdownButtonHideUnderline(
@@ -561,11 +545,11 @@ class _HomePageState extends State<HomePage> {
                                     icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
                                     style: const TextStyle(color: Colors.white, fontSize: 16),
                                     isExpanded: true,
-                                    items: cities.map((city) {
-                                      return DropdownMenuItem(value: city, child: Text(city));
-                                    }).toList(),
-                                    onChanged: (value) async {
-                                      selectedCity = value;
+                                    items: cities
+                                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                        .toList(),
+                                    onChanged: (v) async {
+                                      selectedCity = v;
                                       await fetchUniversities();
                                       setState(() {});
                                     },
@@ -580,7 +564,6 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
-
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
@@ -592,10 +575,7 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       const Padding(
                         padding: EdgeInsets.fromLTRB(24, 32, 24, 16),
-                        child: Text(
-                          'Perguruan Tinggi',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
+                        child: Text('Perguruan Tinggi', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       ),
                       Expanded(
                         child: isLoading
@@ -603,28 +583,21 @@ class _HomePageState extends State<HomePage> {
                             : ListView.builder(
                                 padding: const EdgeInsets.symmetric(horizontal: 24),
                                 itemCount: universities.length,
-                                itemBuilder: (context, index) {
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(universities[index]['icon'], color: Colors.black87),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Text(
-                                            universities[index]['name'],
-                                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
+                                itemBuilder: (_, i) => Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(universities[i]['icon'], color: Colors.black87),
+                                      const SizedBox(width: 16),
+                                      Text(universities[i]['name'], style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                                    ],
+                                  ),
+                                ),
                               ),
                       ),
                     ],
@@ -635,27 +608,36 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0), // agar tidak blur isi navbar
-          child: BottomNavigationBar(
-            backgroundColor: const Color(0xFFE53935).withOpacity(0.95),
-            unselectedItemColor: Colors.white.withOpacity(0.6),
-            selectedItemColor: Colors.white,
-            showSelectedLabels: false,
-            showUnselectedLabels: false,
-            type: BottomNavigationBarType.fixed,
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            elevation: 0,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-              BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
-              BottomNavigationBarItem(icon: Icon(Icons.history), label: ''),
-              BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
-            ],
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE53935).withOpacity(0.95),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: BottomNavigationBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                selectedItemColor: Colors.white,
+                unselectedItemColor: Colors.white.withOpacity(0.5),
+                showSelectedLabels: false,
+                showUnselectedLabels: false,
+                type: BottomNavigationBarType.fixed,
+                currentIndex: _selectedIndex,
+                onTap: _onItemTapped,
+                items: [
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 0 ? Icons.home : Icons.home_outlined), label: ''),
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 1 ? Icons.favorite : Icons.favorite_border), label: ''),
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 2 ? Icons.history : Icons.history_toggle_off), label: ''),
+                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 3 ? Icons.person : Icons.person_outline), label: ''),
+                ],
+              ),
+            ),
           ),
         ),
       ),
