@@ -458,16 +458,34 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Map<String, dynamic>> _places = [];
   bool _loading = true;
   List<String> _categories = [];
-  String _selectedUniversityName = 'Pilih Lokasi';
+  String _selectedUniversityName = '';
   List<Map<String, dynamic>> _universities = [];
   int? _selectedUniversityId;
 
   @override
   void initState() {
     super.initState();
-    _loadUniversities();
-    _loadCategories();
-    _loadPlaces();
+    _initData();
+  }
+
+  /// Initialize data in sequence so that the selected university is set
+  /// before we load places. This prevents a race where places are loaded
+  /// without a university filter because `_loadUniversities()` hadn't
+  /// completed yet.
+  Future<void> _initData() async {
+    setState(() {
+      _loading = true;
+    });
+    try {
+      await _loadUniversities();
+      await _loadCategories();
+      await _loadPlaces();
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+      });
+    }
   }
 
   Future<void> _loadUniversities() async {
@@ -500,13 +518,13 @@ class _MyHomePageState extends State<MyHomePage> {
         }
         final uniq = names.toSet().toList();
         setState(() {
-          _categories = ['Semua', ...uniq];
+          _categories = uniq; // categories come only from DB
         });
       }
     } catch (_) {
-      // fallback to defaults
+      // on error keep categories empty so UI displays nothing
       setState(() {
-        _categories = ['Semua', 'Ayam Geprek', 'Masakan Rumahan', 'Bakso', 'Pizza'];
+        _categories = [];
       });
     }
   }
@@ -653,7 +671,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildCategoryChips() {
-    final categories = _categories.isNotEmpty ? _categories : ['Semua', 'Ayam Geprek', 'Masakan Rumahan', 'Bakso', 'Pizzazz'];
+    if (_categories.isEmpty) return const SizedBox.shrink();
+    final categories = _categories;
     return SizedBox(
       height: 44,
       child: ListView.separated(
@@ -686,10 +705,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildPlaceCard(Map<String, dynamic> place) {
-    final name = place['name'] ?? 'Nama Tempat';
-    final price = place['price_range'] ?? 'Rp.10.000-25.000';
-    final address = place['address'] ?? 'Jl. Gebang Lor No. X';
-    final rating = (place['rating'] != null) ? place['rating'].toString() : '4.8';
+    final name = (place['name'] != null) ? place['name'].toString() : '';
+    final price = (place['price_range'] != null) ? place['price_range'].toString() : '';
+    final address = (place['address'] != null) ? place['address'].toString() : '';
+    final rating = (place['rating'] != null) ? place['rating'].toString() : '';
     final imageUrl = (place['image_url'] != null && place['image_url'] != '') ? place['image_url'] as String : null;
     final favoritesCount = place['favorites_count'] ?? 0;
     final isFav = place['is_favorite'] == true;
