@@ -459,6 +459,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Map<String, dynamic>> _places = [];
   bool _loading = true;
   List<String> _categories = [];
+  String _selectedCategory = 'Semua';
   String _selectedUniversityName = '';
   List<Map<String, dynamic>> _universities = [];
   int? _selectedUniversityId;
@@ -490,20 +491,20 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // Diagnostic helper removed — production-ready behavior (no debug SnackBars/prints)
+
   Future<void> _loadUniversities() async {
     try {
       final res = await Supabase.instance.client.from('universities').select().order('name');
-      if (res is List) {
-        final list = res.cast<Map<String, dynamic>>().toList();
-        setState(() {
-          _universities = list;
-          if (list.isNotEmpty) {
-            final first = list.first;
-            _selectedUniversityId = (first['id'] is int) ? first['id'] as int : int.tryParse(first['id'].toString());
-            _selectedUniversityName = first['name'] ?? 'Pilih Lokasi';
-          }
-        });
-      }
+      final list = (res as List).cast<Map<String, dynamic>>().toList();
+      setState(() {
+        _universities = list;
+        if (list.isNotEmpty) {
+          final first = list.first;
+          _selectedUniversityId = (first['id'] is int) ? first['id'] as int : int.tryParse(first['id'].toString());
+          _selectedUniversityName = (first['name']?.toString() ?? 'Pilih Lokasi');
+        }
+      });
     } catch (_) {
       // ignore failures for now
     }
@@ -511,23 +512,30 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _loadCategories() async {
     try {
-      final res = await Supabase.instance.client.from('menus').select('name');
-      if (res is List) {
-        final names = <String>[];
-        for (final item in res.cast<Map<String, dynamic>>()) {
-          final n = item['name']?.toString();
-          if (n != null && n.isNotEmpty) names.add(n);
-        }
-        final uniq = names.toSet().toList();
-        setState(() {
-          _categories = uniq; // categories come only from DB
-        });
+      // Load restaurant-type categories from `jenisresto.nama` only
+      final res = await Supabase.instance.client.from('jenisresto').select('nama');
+      final list = (res as List).cast<Map<String, dynamic>>().toList();
+      final names = <String>[];
+      for (final item in list) {
+        final n = item['nama']?.toString();
+        if (n != null && n.isNotEmpty) names.add(n.trim());
       }
-    } catch (_) {
-      // on error keep categories empty so UI displays nothing
+      final uniq = names.toSet().toList();
+
+      // include an 'Semua' option at the front
       setState(() {
-        _categories = [];
+        _categories = ['Semua', ...uniq];
+        _selectedCategory = 'Semua';
       });
+
+      // If uniq is empty, leave categories as just 'Semua' (no debug UI shown)
+    } catch (_) {
+      // on error, ensure at least 'Semua' exists
+      setState(() {
+        _categories = ['Semua'];
+        _selectedCategory = 'Semua';
+      });
+      // Fail silently for category loading in production — no debug SnackBar
     }
   }
 
@@ -540,41 +548,39 @@ class _MyHomePageState extends State<MyHomePage> {
       // Select places and embed favorites to compute counts and whether current user favorited
       final user = Supabase.instance.client.auth.currentUser;
 
+      final base = Supabase.instance.client.from('places').select('*, favorites(*)');
       final res = (_selectedUniversityId != null)
-          ? await Supabase.instance.client
-              .from('places')
-              .select('*, favorites(*)')
-                      .eq('university_id', _selectedUniversityId!)
-              .order('rating', ascending: false)
-          : await Supabase.instance.client
-              .from('places')
-              .select('*, favorites(*)')
-              .order('rating', ascending: false);
+          ? await base.eq('university_id', _selectedUniversityId!).order('rating', ascending: false)
+          : await base.order('rating', ascending: false);
 
-      if (res is List) {
-        final List<Map<String, dynamic>> places = [];
-        for (final item in res.cast<Map<String, dynamic>>()) {
-          final favs = (item['favorites'] is List) ? List<Map<String, dynamic>>.from(item['favorites'].cast<Map<String, dynamic>>()) : <Map<String, dynamic>>[];
-          final favCount = favs.length;
-          final isFav = (user != null) ? favs.any((f) => f['user_id'] == user.id) : false;
+      final List<Map<String, dynamic>> places = [];
+      for (final item in (res as List).cast<Map<String, dynamic>>()) {
+        final favs = (item['favorites'] is List) ? List<Map<String, dynamic>>.from(item['favorites'].cast<Map<String, dynamic>>()) : <Map<String, dynamic>>[];
+        final favCount = favs.length;
+        final isFav = (user != null) ? favs.any((f) => f['user_id'] == user.id) : false;
 
-          // Create cleaned place map with convenience fields
-          final cleaned = Map<String, dynamic>.from(item);
-          cleaned['favorites_count'] = favCount;
-          cleaned['is_favorite'] = isFav;
+        // Create cleaned place map with convenience fields
+        final cleaned = Map<String, dynamic>.from(item);
+        cleaned['favorites_count'] = favCount;
+        cleaned['is_favorite'] = isFav;
 
-          places.add(cleaned);
-        }
-
-        setState(() {
-          _places = places;
-        });
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No places found or unexpected response')),
-        );
+        places.add(cleaned);
       }
+
+      // If a category is selected (and not 'Semua'), filter client-side by checking
+      // whether the place name contains the category term (case-insensitive)
+      final filtered = (_selectedCategory != 'Semua')
+          ? places.where((p) {
+              final pname = (p['name'] ?? '').toString().toLowerCase();
+              final term = _selectedCategory.toLowerCase();
+              return pname.contains(term);
+            }).toList()
+          : places;
+
+      if (!mounted) return;
+      setState(() {
+        _places = filtered;
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -694,10 +700,8 @@ Widget _buildLocationHeader() {
                         ),
                       ),
                       Text(
-                        // Menampilkan nama universitas atau default jika null
-                        _selectedUniversityName != null && _selectedUniversityName!.isNotEmpty
-                            ? _selectedUniversityName!
-                            : 'Pilih Lokasi', 
+                        // Menampilkan nama universitas atau default jika kosong
+                        _selectedUniversityName.isNotEmpty ? _selectedUniversityName : 'Pilih Lokasi',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -772,20 +776,29 @@ Widget _buildLocationHeader() {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         itemBuilder: (context, index) {
-          final isActive = index == 0;
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: isActive ? const Color(0xFFAA2623) : Colors.white,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: const Color(0xFFAA2623)),
-            ),
-            child: Center(
-              child: Text(
-                categories[index],
-                style: TextStyle(
-                  color: isActive ? Colors.white : const Color(0xFFAA2623),
-                  fontWeight: FontWeight.w600,
+          final isActive = categories[index] == _selectedCategory;
+          return GestureDetector(
+            onTap: () async {
+              setState(() {
+                _selectedCategory = categories[index];
+                _loading = true;
+              });
+              await _loadPlaces();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isActive ? const Color(0xFFAA2623) : Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: const Color(0xFFAA2623)),
+              ),
+              child: Center(
+                child: Text(
+                  categories[index],
+                  style: TextStyle(
+                    color: isActive ? Colors.white : const Color(0xFFAA2623),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -911,18 +924,7 @@ Widget _buildLocationHeader() {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).maybePop(),
-                        child: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Rekomendasi Mahasiswa', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Location pill (centralized widget)
+                  // Location pill (centralized widget) appears at top
                   _buildLocationHeader(),
                 ],
               ),
@@ -932,13 +934,23 @@ Widget _buildLocationHeader() {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCategoryChips(),
-                  const SizedBox(height: 8),
-                  const SizedBox(height: 8),
-                ],
-              ),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).maybePop(),
+                          child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF343446)),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Rekomendasi Mahasiswa', style: TextStyle(color: Color(0xFF343446), fontSize: 20, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildCategoryChips(),
+                    const SizedBox(height: 8),
+                  ],
+                ),
             ),
 
             // List
