@@ -471,26 +471,40 @@ class _HomePageState extends State<HomePage> {
     try {
       final res = await supabase.from('cities').select('name');
       cities = res.map<String>((row) => row['name'] as String).toList();
-      if (selectedCity == null && cities.isNotEmpty) selectedCity = cities.first;
+
+      if (selectedCity == null && cities.isNotEmpty) {
+        selectedCity = cities.first;
+      }
+
       await fetchUniversities();
       setState(() {});
-    } catch (e) {}
+    } catch (e) {
+      print(e);
+    }
   }
 
   Future<void> fetchUniversities() async {
     try {
       setState(() => isLoading = true);
+
       final res = await supabase
           .from('universities')
-          .select('name, city_id, cities!inner(name)')
+          .select('id, name, city_id, cities!inner(name)')
           .eq('cities.name', selectedCity!);
 
       universities = res
-          .map<Map<String, dynamic>>((u) => {'name': u['name'], 'icon': Icons.school})
+          .map<Map<String, dynamic>>(
+            (u) => {
+              'id': u['id'],
+              'name': u['name'],
+              'icon': Icons.school,
+            },
+          )
           .toList();
 
       setState(() => isLoading = false);
     } catch (e) {
+      print(e);
       setState(() => isLoading = false);
     }
   }
@@ -514,6 +528,7 @@ class _HomePageState extends State<HomePage> {
         child: SafeArea(
           child: Column(
             children: [
+              // ================= HEADER ==================
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 40, 24, 20),
                 child: Column(
@@ -524,14 +539,20 @@ class _HomePageState extends State<HomePage> {
                       color: Colors.white,
                     ),
                     const SizedBox(height: 30),
-                    const Text('Pilih lokasi Anda', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    const Text(
+                      'Pilih lokasi Anda',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
                     const SizedBox(height: 12),
+
+                    // ================= CITY DROPDOWN ==================
                     ClipRRect(
                       borderRadius: BorderRadius.circular(30),
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(30),
@@ -546,11 +567,16 @@ class _HomePageState extends State<HomePage> {
                                   child: DropdownButton<String>(
                                     value: selectedCity,
                                     dropdownColor: const Color(0xFFE53935),
-                                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
-                                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                                    icon: const Icon(Icons.keyboard_arrow_down,
+                                        color: Colors.white),
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 16),
                                     isExpanded: true,
                                     items: cities
-                                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                        .map((c) => DropdownMenuItem(
+                                              value: c,
+                                              child: Text(c),
+                                            ))
                                         .toList(),
                                     onChanged: (v) async {
                                       selectedCity = v;
@@ -568,6 +594,8 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
+
+              // ================= WHITE CONTENT AREA ==================
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
@@ -579,27 +607,56 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       const Padding(
                         padding: EdgeInsets.fromLTRB(24, 32, 24, 16),
-                        child: Text('Perguruan Tinggi', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          'Perguruan Tinggi',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
                       ),
+
+                      // ================= UNIVERSITY LIST ==================
                       Expanded(
                         child: isLoading
                             ? const Center(child: CircularProgressIndicator())
                             : ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 24),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 24),
                                 itemCount: universities.length,
-                                itemBuilder: (_, i) => Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey.shade300),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(universities[i]['icon'], color: Colors.black87),
-                                      const SizedBox(width: 16),
-                                      Text(universities[i]['name'], style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                                    ],
+                                itemBuilder: (_, i) => GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => PlaceListPage(
+                                          universityId: universities[i]['id'],
+                                          universityName:
+                                              universities[i]['name'],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: Colors.grey.shade300),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(universities[i]['icon'],
+                                            color: Colors.black87),
+                                        const SizedBox(width: 16),
+                                        Text(
+                                          universities[i]['name'],
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -612,6 +669,8 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+
+      // ================= BOTTOM NAVBAR ==================
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
         child: ClipRRect(
@@ -635,10 +694,26 @@ class _HomePageState extends State<HomePage> {
                 currentIndex: _selectedIndex,
                 onTap: _onItemTapped,
                 items: [
-                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 0 ? Icons.home : Icons.home_outlined), label: ''),
-                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 1 ? Icons.favorite : Icons.favorite_border), label: ''),
-                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 2 ? Icons.history : Icons.history_toggle_off), label: ''),
-                  BottomNavigationBarItem(icon: Icon(_selectedIndex == 3 ? Icons.person : Icons.person_outline), label: ''),
+                  BottomNavigationBarItem(
+                      icon: Icon(_selectedIndex == 0
+                          ? Icons.home
+                          : Icons.home_outlined),
+                      label: ''),
+                  BottomNavigationBarItem(
+                      icon: Icon(_selectedIndex == 1
+                          ? Icons.favorite
+                          : Icons.favorite_border),
+                      label: ''),
+                  BottomNavigationBarItem(
+                      icon: Icon(_selectedIndex == 2
+                          ? Icons.history
+                          : Icons.history_toggle_off),
+                      label: ''),
+                  BottomNavigationBarItem(
+                      icon: Icon(_selectedIndex == 3
+                          ? Icons.person
+                          : Icons.person_outline),
+                      label: ''),
                 ],
               ),
             ),
@@ -649,3 +724,386 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+class PlaceListPage extends StatefulWidget {
+  final int universityId;
+  final String universityName;
+
+  const PlaceListPage({
+    super.key,
+    required this.universityId,
+    required this.universityName,
+  });
+
+  @override
+  State<PlaceListPage> createState() => _PlaceListPageState();
+}
+
+class _PlaceListPageState extends State<PlaceListPage> {
+  final supabase = Supabase.instance.client;
+
+  List places = [];
+  bool isLoading = true;
+  int bottomIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPlaces();
+  }
+
+  Future<void> fetchPlaces() async {
+    try {
+      final res = await supabase
+          .from('places')
+          .select()
+          .eq('university_id', widget.universityId);
+
+      setState(() {
+        places = res;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Fetch error: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBody: true,
+
+      /// ===================== BOTTOM NAV (SAMA DENGAN HOMEPAGE) =====================
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE53935).withOpacity(0.95),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: BottomNavigationBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                selectedItemColor: Colors.white,
+                unselectedItemColor: Colors.white.withOpacity(0.5),
+                showSelectedLabels: false,
+                showUnselectedLabels: false,
+                type: BottomNavigationBarType.fixed,
+                currentIndex: bottomIndex,
+                onTap: (i) => setState(() => bottomIndex = i),
+                items: [
+                  BottomNavigationBarItem(
+                    icon: Icon(bottomIndex == 0 ? Icons.home : Icons.home_outlined),
+                    label: '',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(bottomIndex == 1
+                        ? Icons.favorite
+                        : Icons.favorite_border),
+                    label: '',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(bottomIndex == 2
+                        ? Icons.history
+                        : Icons.history_toggle_off),
+                    label: '',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(bottomIndex == 3
+                        ? Icons.person
+                        : Icons.person_outline),
+                    label: '',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE53935), Color(0xFFC62828)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// ===================== NAVBAR ATAS MERAH (SAMA DENGAN HOMEPAGE) =====================
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFB61C1C),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Icon(Icons.arrow_back, color: Colors.white),
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.location_on, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          widget.universityName,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              /// ===================== WHITE CONTENT AREA =====================
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(32)),
+                  ),
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildContent(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ===================== CONTENT SCROLL =====================
+  Widget _buildContent() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// SEARCH BAR
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 25, 20, 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6E6E6),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.search, color: Colors.black54),
+                  SizedBox(width: 10),
+                  Text("Cari makanan atau tempat",
+                      style: TextStyle(color: Colors.black54)),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          _buildSection("Rekomendasi Mahasiswa"),
+          const SizedBox(height: 14),
+          _buildHorizontalList(),
+
+          const SizedBox(height: 24),
+
+          _buildSection("Hidden Gem"),
+          const SizedBox(height: 14),
+          _buildHorizontalList(),
+
+          const SizedBox(height: 24),
+
+          _buildSection("Lainnya"),
+          const SizedBox(height: 14),
+          _buildVerticalList(),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+
+  /// ===================== SECTION HEADER =====================
+  Widget _buildSection(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const Spacer(),
+          Container(
+            height: 32,
+            width: 32,
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: const Icon(Icons.arrow_forward, color: Colors.white),
+              onPressed: () {},
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ===================== HORIZONTAL LIST =====================
+  Widget _buildHorizontalList() {
+    return SizedBox(
+      height: 170,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.only(left: 20),
+        itemCount: places.length,
+        itemBuilder: (_, i) => _buildHorizontalCard(places[i]),
+      ),
+    );
+  }
+
+  Widget _buildHorizontalCard(dynamic place) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        width: 140,
+        margin: const EdgeInsets.only(right: 14),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 70,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.grey[300],
+                image: place["image_url"] != null
+                    ? DecorationImage(
+                        image: NetworkImage(place["image_url"]), fit: BoxFit.cover)
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              place['name'],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            Text(place['price_range'] ?? '',
+                style: const TextStyle(fontSize: 12, color: Colors.black54)),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.star, size: 16, color: Colors.orange),
+                const SizedBox(width: 4),
+                Text(place['rating']?.toString() ?? "-"),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ===================== VERTICAL LIST =====================
+  Widget _buildVerticalList() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: places.length,
+      itemBuilder: (_, i) => _buildVerticalCard(places[i]),
+    );
+  }
+
+  Widget _buildVerticalCard(dynamic place) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 3))
+          ],
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.network(
+                place["image_url"] ?? "",
+                height: 70,
+                width: 70,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      const Icon(Icons.star,
+                          size: 16, color: Colors.orange),
+                      const SizedBox(width: 4),
+                      Text(place["rating"]?.toString() ?? "-"),
+                    ]),
+                    Text(place["name"],
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
+                    Text(place["price_range"] ?? "",
+                        style: const TextStyle(
+                            fontSize: 13, color: Colors.black54)),
+                    const SizedBox(height: 4),
+                    Row(children: const [
+                      Icon(Icons.location_on,
+                          size: 14, color: Colors.black45),
+                      SizedBox(width: 4),
+                      Text("Alamat tidak ditampilkan",
+                          style: TextStyle(
+                              fontSize: 12, color: Colors.black45)),
+                    ])
+                  ]),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
