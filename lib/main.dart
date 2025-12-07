@@ -389,7 +389,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-// --- REUSABLE WIDGETS (Agar kodingan rapi) ---
 Widget _buildBackground(double height, double width) {
   return Positioned(
     top: 0, left: 0, right: 0,
@@ -446,7 +445,6 @@ InputDecoration _inputDecoration(String hint) {
   );
 }
 
-// --- HOME PAGE (Setelah Login Berhasil) ---
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
