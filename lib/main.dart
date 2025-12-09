@@ -30,6 +30,441 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
+class RecommendationPage extends StatefulWidget {
+  final int? initialUniversityId;
+  final String? initialUniversityName;
+
+  const RecommendationPage({super.key, this.initialUniversityId, this.initialUniversityName});
+
+  @override
+  State<RecommendationPage> createState() => _RecommendationPageState();
+}
+
+class _RecommendationPageState extends State<RecommendationPage> {
+  final supabase = Supabase.instance.client;
+
+  List<Map<String, dynamic>> _places = [];
+  bool _loading = true;
+  List<String> _categories = [];
+  String _selectedCategory = 'Semua';
+  String _selectedUniversityName = '';
+  List<Map<String, dynamic>> _universities = [];
+  int? _selectedUniversityId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedUniversityId = widget.initialUniversityId;
+    _selectedUniversityName = widget.initialUniversityName ?? '';
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    setState(() => _loading = true);
+    try {
+      await _loadUniversities();
+      await _loadCategories();
+      await _loadPlaces();
+    } finally {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadUniversities() async {
+    try {
+      final res = await supabase.from('universities').select().order('name');
+      final list = (res as List).cast<Map<String, dynamic>>().toList();
+      setState(() {
+        _universities = list;
+        if (_selectedUniversityId == null && list.isNotEmpty) {
+          final first = list.first;
+          _selectedUniversityId = (first['id'] is int) ? first['id'] as int : int.tryParse(first['id'].toString());
+          _selectedUniversityName = (first['name']?.toString() ?? 'Pilih Lokasi');
+        }
+      });
+    } catch (_) {
+      
+    }
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final res = await supabase.from('jenisresto').select('nama');
+      final list = (res as List).cast<Map<String, dynamic>>().toList();
+      final names = <String>[];
+      for (final item in list) {
+        final n = item['nama']?.toString();
+        if (n != null && n.isNotEmpty) names.add(n.trim());
+      }
+      final uniq = names.toSet().toList();
+      setState(() {
+        _categories = ['Semua', ...uniq];
+        _selectedCategory = 'Semua';
+      });
+    } catch (_) {
+      setState(() {
+        _categories = ['Semua'];
+        _selectedCategory = 'Semua';
+      });
+    }
+  }
+
+  Future<void> _loadPlaces() async {
+    setState(() => _loading = true);
+    try {
+      final user = supabase.auth.currentUser;
+
+      final base = supabase.from('places').select('*, favorites(*)');
+      final res = (_selectedUniversityId != null)
+          ? await base.eq('university_id', _selectedUniversityId!).order('rating', ascending: false)
+          : await base.order('rating', ascending: false);
+
+      final List<Map<String, dynamic>> places = [];
+      for (final item in (res as List).cast<Map<String, dynamic>>()) {
+        final favs = (item['favorites'] is List) ? List<Map<String, dynamic>>.from(item['favorites'].cast<Map<String, dynamic>>()) : <Map<String, dynamic>>[];
+        final favCount = favs.length;
+        final isFav = (user != null) ? favs.any((f) => f['user_id'] == user.id) : false;
+        final cleaned = Map<String, dynamic>.from(item);
+        cleaned['favorites_count'] = favCount;
+        cleaned['is_favorite'] = isFav;
+        places.add(cleaned);
+      }
+
+      final filtered = (_selectedCategory != 'Semua')
+          ? places.where((p) {
+              final pname = (p['name'] ?? '').toString().toLowerCase();
+              final term = _selectedCategory.toLowerCase();
+              return pname.contains(term);
+            }).toList()
+          : places;
+
+      if (!mounted) return;
+      setState(() {
+        _places = filtered;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _toggleFavorite(int placeId) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please login to favourite places')));
+      return;
+    }
+
+    final idx = _places.indexWhere((p) => p['id'] == placeId);
+    if (idx == -1) return;
+
+    final currentlyFav = _places[idx]['is_favorite'] == true;
+    setState(() {
+      _places[idx]['is_favorite'] = !currentlyFav;
+      _places[idx]['favorites_count'] = (_places[idx]['favorites_count'] ?? 0) + (currentlyFav ? -1 : 1);
+    });
+
+    try {
+      if (!currentlyFav) {
+        await supabase.from('favorites').insert({'user_id': user.id, 'place_id': placeId});
+      } else {
+        await supabase.from('favorites').delete().eq('user_id', user.id).eq('place_id', placeId);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _places[idx]['is_favorite'] = currentlyFav;
+        _places[idx]['favorites_count'] = (_places[idx]['favorites_count'] ?? 0) + (currentlyFav ? 0 : -1);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error toggling favourite: $e')));
+    }
+  }
+
+  
+
+  void _showUniversitySelector() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const SizedBox(height: 12),
+            const Text('Pilih Universitas', style: TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            ..._universities.map((u) {
+              final idRaw = u['id'];
+              final id = (idRaw is int) ? idRaw : int.tryParse(idRaw.toString());
+              final name = u['name'] ?? '';
+              final selected = id == _selectedUniversityId;
+              return ListTile(
+                title: Text(name),
+                trailing: selected ? const Icon(Icons.check, color: Color(0xFFA22523)) : null,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  setState(() {
+                    _selectedUniversityId = id;
+                    _selectedUniversityName = name;
+                    _loading = true;
+                  });
+                  _loadPlaces();
+                },
+              );
+            }).toList(),
+            const SizedBox(height: 16),
+          ]),
+        );
+      },
+    );
+  }
+
+  Widget _buildCategoryChips() {
+    if (_categories.isEmpty) return const SizedBox.shrink();
+    final categories = _categories;
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemBuilder: (context, index) {
+          final isActive = categories[index] == _selectedCategory;
+          return GestureDetector(
+            onTap: () async {
+              setState(() {
+                _selectedCategory = categories[index];
+                _loading = true;
+              });
+              await _loadPlaces();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(color: isActive ? const Color(0xFFAA2623) : Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: const Color(0xFFAA2623))),
+              child: Center(child: Text(categories[index], style: TextStyle(color: isActive ? Colors.white : const Color(0xFFAA2623), fontWeight: FontWeight.w600))),
+            ),
+          );
+        },
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemCount: categories.length,
+      ),
+    );
+  }
+
+  Widget _buildPlaceCard(Map<String, dynamic> place) {
+    final name = (place['name'] != null) ? place['name'].toString() : '';
+    final price = (place['price_range'] != null) ? place['price_range'].toString() : '';
+    final address = (place['address'] != null) ? place['address'].toString() : '';
+    final rating = (place['rating'] != null) ? place['rating'].toString() : '';
+    final imageUrl = (place['image_url'] != null && place['image_url'] != '') ? place['image_url'] as String : null;
+    final favoritesCount = place['favorites_count'] ?? 0;
+    final isFav = place['is_favorite'] == true;
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          children: [
+            // Image with rating badge
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 84,
+                    height: 84,
+                    color: Colors.grey.shade200,
+                    child: imageUrl != null
+                        ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.camera_alt_outlined, size: 36, color: Colors.grey))
+                        : const Icon(Icons.camera_alt_outlined, size: 36, color: Colors.grey),
+                  ),
+                ),
+                Positioned(
+                  top: -6,
+                  left: -6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.star, color: Color(0xFFF4B33A), size: 14),
+                        const SizedBox(width: 4),
+                        Text(rating, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(width: 12),
+
+            // Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 6),
+                  Text(price, style: const TextStyle(color: Colors.black54)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 14, color: Colors.black54),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text(address, style: const TextStyle(color: Colors.black54))),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text('$favoritesCount orang menyukai', style: const TextStyle(color: Colors.black38, fontSize: 12)),
+                ],
+              ),
+            ),
+
+            // favvorit
+            Column(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    final idRaw = place['id'];
+                    final id = (idRaw is int) ? idRaw : int.tryParse(idRaw.toString()) ?? 0;
+                    _toggleFavorite(id);
+                  },
+                  icon: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: isFav ? const Color(0xFFF94931) : Colors.black54),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8F6F6),
+          body: SafeArea(
+            child: Column(
+              children: [
+                
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFB61C1C),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(Icons.arrow_back, color: Colors.white),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.location_on, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _selectedUniversityName.isNotEmpty ? _selectedUniversityName : 'Pilih Lokasi',
+                            style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.of(context).maybePop(),
+                            child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF343446)),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Rekomendasi Mahasiswa',
+                            style: TextStyle(color: Color(0xFF343446), fontSize: 20, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildCategoryChips(),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : RefreshIndicator(
+                          onRefresh: _loadPlaces,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 80),
+                            itemCount: _places.length,
+                            itemBuilder: (context, index) {
+                              return _buildPlaceCard(_places[index]);
+                            },
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+          bottomNavigationBar: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(30),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE53935).withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: BottomNavigationBar(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    selectedItemColor: Colors.white,
+                    unselectedItemColor: Colors.white.withOpacity(0.5),
+                    showSelectedLabels: false,
+                    showUnselectedLabels: false,
+                    type: BottomNavigationBarType.fixed,
+                    currentIndex: 0,
+                    onTap: (_) {},
+                    items: [
+                      BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
+                      BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
+                      BottomNavigationBarItem(icon: Icon(Icons.history_toggle_off), label: ''),
+                      BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+  }
+}
+
 // --- LOGIN SCREEN (Standar: Email & Password) ---
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -959,7 +1394,18 @@ class _PlaceListPageState extends State<PlaceListPage> {
             child: IconButton(
               padding: EdgeInsets.zero,
               icon: const Icon(Icons.arrow_forward, color: Colors.white),
-              onPressed: () {},
+              onPressed: () {
+                // Open the Recommendation screen, passing current university
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RecommendationPage(
+                      initialUniversityId: widget.universityId,
+                      initialUniversityName: widget.universityName,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
