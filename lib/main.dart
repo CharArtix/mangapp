@@ -352,15 +352,24 @@ class _RecommendationPageState extends State<RecommendationPage> {
 
   @override
   Widget build(BuildContext context) {
-    
-        return Scaffold(
-          backgroundColor: const Color(0xFFF8F6F6),
-          body: SafeArea(
-            child: Column(
-              children: [
-                
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+    return Scaffold(
+      extendBody: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE53935), Color(0xFFC62828)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                child: InkWell(
+                  onTap: _showUniversitySelector,
+                  borderRadius: BorderRadius.circular(20),
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -378,90 +387,120 @@ class _RecommendationPageState extends State<RecommendationPage> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            _selectedUniversityName.isNotEmpty ? _selectedUniversityName : 'Pilih Lokasi',
-                            style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                            _selectedUniversityName.isNotEmpty
+                                ? _selectedUniversityName
+                                : 'Pilih Lokasi',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(right: 12.0),
+                          child: Icon(Icons.keyboard_arrow_down,
+                              color: Colors.white),
                         ),
                       ],
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).maybePop(),
-                            child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF343446)),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Rekomendasi Mahasiswa',
-                            style: TextStyle(color: Color(0xFF343446), fontSize: 20, fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      _buildCategoryChips(),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: _loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : RefreshIndicator(
-                          onRefresh: _loadPlaces,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 80),
-                            itemCount: _places.length,
-                            itemBuilder: (context, index) {
-                              return _buildPlaceCard(_places[index]);
-                            },
-                          ),
-                        ),
-                ),
-              ],
-            ),
-          ),
-          bottomNavigationBar: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              ),
+              Expanded(
                 child: Container(
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE53935).withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(30),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(32)),
                   ),
-                  child: BottomNavigationBar(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    selectedItemColor: Colors.white,
-                    unselectedItemColor: Colors.white.withOpacity(0.5),
-                    showSelectedLabels: false,
-                    showUnselectedLabels: false,
-                    type: BottomNavigationBarType.fixed,
-                    currentIndex: 0,
-                    onTap: (_) {},
-                    items: [
-                      BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
-                      BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
-                      BottomNavigationBarItem(icon: Icon(Icons.history_toggle_off), label: ''),
-                      BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Rekomendasi Mahasiswa',
+                              style: TextStyle(
+                                  color: Color(0xFF343446),
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildCategoryChips(),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: _loading
+                            ? const Center(
+                                child: CircularProgressIndicator(),
+                              )
+                            : RefreshIndicator(
+                                onRefresh: _loadPlaces,
+                                child: ListView.builder(
+                                  padding: const EdgeInsets.fromLTRB(
+                                      12, 0, 12, 80),
+                                  itemCount: _places.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildPlaceCard(
+                                        _places[index]);
+                                  },
+                                ),
+                              ),
+                      ),
                     ],
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE53935).withOpacity(0.95),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: BottomNavigationBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                selectedItemColor: Colors.white,
+                unselectedItemColor:
+                    Colors.white.withOpacity(0.5),
+                showSelectedLabels: false,
+                showUnselectedLabels: false,
+                type: BottomNavigationBarType.fixed,
+                currentIndex: 0,
+                onTap: (_) {},
+                items: const [
+                  BottomNavigationBarItem(
+                      icon: Icon(Icons.home_outlined), label: ''),
+                  BottomNavigationBarItem(
+                      icon: Icon(Icons.favorite_border), label: ''),
+                  BottomNavigationBarItem(
+                      icon: Icon(Icons.history_toggle_off), label: ''),
+                  BottomNavigationBarItem(
+                      icon: Icon(Icons.person_outline), label: ''),
+                ],
+              ),
             ),
           ),
-        );
+        ),
+      ),
+    );
   }
 }
 
@@ -1033,6 +1072,7 @@ class _HomePageState extends State<HomePage> {
               // ================= WHITE CONTENT AREA ==================
               Expanded(
                 child: Container(
+                  margin: const EdgeInsets.only(bottom: 40),
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
@@ -1353,7 +1393,20 @@ class _PlaceListPageState extends State<PlaceListPage> {
 
           const SizedBox(height: 10),
 
-          _buildSection("Rekomendasi Mahasiswa"),
+          _buildSection(
+            "Rekomendasi Mahasiswa",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RecommendationPage(
+                    initialUniversityId: widget.universityId,
+                    initialUniversityName: widget.universityName,
+                  ),
+                ),
+              );
+            },
+          ),
           const SizedBox(height: 14),
           _buildHorizontalList(),
 
@@ -1375,37 +1428,21 @@ class _PlaceListPageState extends State<PlaceListPage> {
   }
 
   /// ===================== SECTION HEADER =====================
-  Widget _buildSection(String title) {
+  Widget _buildSection(String title, {VoidCallback? onPressed}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          Text(title,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const Spacer(),
           Container(
             height: 32,
             width: 32,
-            decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
             child: IconButton(
               padding: EdgeInsets.zero,
               icon: const Icon(Icons.arrow_forward, color: Colors.white),
-              onPressed: () {
-                // Open the Recommendation screen, passing current university
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RecommendationPage(
-                      initialUniversityId: widget.universityId,
-                      initialUniversityName: widget.universityName,
-                    ),
-                  ),
-                );
-              },
+              onPressed: onPressed,
             ),
           ),
         ],
