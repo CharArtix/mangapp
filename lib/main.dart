@@ -1108,27 +1108,39 @@ class _PlaceListPageState extends State<PlaceListPage> {
     try {
       final user = supabase.auth.currentUser;
 
-      // Ambil places dengan info favorites
       final res = await supabase
           .from('places')
-          .select('*, favorites(*)')
+          .select('''
+            *,
+            favorites!left (
+              user_id
+            )
+          ''')
           .eq('university_id', widget.universityId);
 
       final List<Map<String, dynamic>> loadedPlaces = [];
+
       for (final item in (res as List).cast<Map<String, dynamic>>()) {
         final favs = (item['favorites'] is List)
-            ? List<Map<String, dynamic>>.from(
-                item['favorites'].cast<Map<String, dynamic>>())
+            ? List<Map<String, dynamic>>.from(item['favorites'])
             : <Map<String, dynamic>>[];
-        
-        final isFav = (user != null) 
-            ? favs.any((f) => f['user_id'] == user.id) 
+
+        final favCount = favs.length;
+
+        final isFav = (user != null)
+            ? favs.any((f) => f['user_id'] == user.id)
             : false;
-        
+
         final cleaned = Map<String, dynamic>.from(item);
         cleaned['is_favorite'] = isFav;
+        cleaned['favorite_count'] = favCount;
+
         loadedPlaces.add(cleaned);
       }
+
+      // ⬇️ SORT berdasarkan favorite_count DESC
+      loadedPlaces.sort((a, b) => (b['favorite_count'] as int)
+          .compareTo(a['favorite_count'] as int));
 
       setState(() {
         places = loadedPlaces;
