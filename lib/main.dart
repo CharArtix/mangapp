@@ -1414,8 +1414,15 @@ class _PlaceListPageState extends State<PlaceListPage> {
     final placeId = place['id'];
     
     return GestureDetector(
-      onTap: () {},
-      child: Container(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetailTempatPage(place: place),
+      ),
+    );
+  },
+  child: Container(
         width: 140,
         margin: const EdgeInsets.only(right: 14),
         padding: const EdgeInsets.all(10),
@@ -1523,8 +1530,16 @@ class _PlaceListPageState extends State<PlaceListPage> {
     final placeId = place['id'];
     
     return GestureDetector(
-      onTap: () {},
-      child: Container(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetailTempatPage(place: place),
+      ),
+    );
+  },
+  child: Container(
+
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -1872,24 +1887,37 @@ class _RecommendationPageState extends State<RecommendationPage> {
     );
   }
 
-  Widget _buildPlaceCard(Map<String, dynamic> place) {
-    final name = (place['name'] != null) ? place['name'].toString() : '';
-    final price =
-        (place['price_range'] != null) ? place['price_range'].toString() : '';
-    final address =
-        (place['address'] != null) ? place['address'].toString() : '';
-    final rating =
-        (place['rating'] != null) ? place['rating'].toString() : '';
-    final imageUrl =
-        (place['image_url'] != null && place['image_url'] != '')
-            ? place['image_url'] as String
-            : null;
-    final favoritesCount = place['favorites_count'] ?? 0;
-    final isFav = place['is_favorite'] == true;
-    return Card(
+Widget _buildPlaceCard(Map<String, dynamic> place) {
+  final name = (place['name'] != null) ? place['name'].toString() : '';
+  final price =
+      (place['price_range'] != null) ? place['price_range'].toString() : '';
+  final address =
+      (place['address'] != null) ? place['address'].toString() : '';
+  final rating =
+      (place['rating'] != null) ? place['rating'].toString() : '';
+  final imageUrl =
+      (place['image_url'] != null && place['image_url'] != '')
+          ? place['image_url'] as String
+          : null;
+
+  final favoritesCount = place['favorites_count'] ?? 0;
+  final isFav = place['is_favorite'] == true;
+
+  return InkWell(
+    borderRadius: BorderRadius.circular(12),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailTempatPage(
+            place: place, // KIRIM DATA PLACE KE HALAMAN DETAIL
+          ),
+        ),
+      );
+    },
+    child: Card(
       elevation: 2,
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -1908,10 +1936,9 @@ class _RecommendationPageState extends State<RecommendationPage> {
                     child: imageUrl != null
                         ? Image.network(imageUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(
-                                Icons.camera_alt_outlined,
-                                size: 36,
-                                color: Colors.grey))
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.camera_alt_outlined,
+                                    size: 36, color: Colors.grey))
                         : const Icon(Icons.camera_alt_outlined,
                             size: 36, color: Colors.grey),
                   ),
@@ -1937,8 +1964,8 @@ class _RecommendationPageState extends State<RecommendationPage> {
                             color: Color(0xFFF4B33A), size: 14),
                         const SizedBox(width: 4),
                         Text(rating,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w700)),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700)),
                       ],
                     ),
                   ),
@@ -1967,8 +1994,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
                       const SizedBox(width: 6),
                       Expanded(
                           child: Text(address,
-                              style:
-                                  const TextStyle(color: Colors.black54))),
+                              style: const TextStyle(color: Colors.black54))),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -1992,17 +2018,18 @@ class _RecommendationPageState extends State<RecommendationPage> {
                   },
                   icon: Icon(
                     isFav ? Icons.favorite : Icons.favorite_border,
-                    color: isFav
-                        ? const Color(0xFFF94931)
-                        : Colors.black54),
+                    color:
+                        isFav ? const Color(0xFFF94931) : Colors.black54,
+                  ),
                 ),
               ],
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // Handle Navigasi Navbar Bawah
   void _onBottomNavTapped(int index) {
@@ -2162,6 +2189,136 @@ class _RecommendationPageState extends State<RecommendationPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+class DetailTempatPage extends StatelessWidget {
+  final Map<String, dynamic> place;
+
+  const DetailTempatPage({super.key, required this.place});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Stack(
+        children: [
+          // Gambar Header
+          SizedBox(
+            height: 300,
+            width: double.infinity,
+            child: Image.network(
+              place['image'] ?? place['image_url'] ?? '',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  Container(color: Colors.black12, height: 300),
+            ),
+          ),
+
+          // Konten Putih
+          DraggableScrollableSheet(
+            initialChildSize: 0.55,
+            minChildSize: 0.55,
+            maxChildSize: 0.9,
+            builder: (context, controller) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                ),
+                child: ListView(
+                  controller: controller,
+                  children: [
+                    Text(
+                      place['name'] ?? 'Tanpa Nama',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF343446),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.red, size: 20),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            place['address'] ?? 'Alamat tidak tersedia',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 20),
+                        const SizedBox(width: 6),
+                        Text(
+                          (place['rating'] ?? 0).toString(),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    const Text(
+                      "Deskripsi",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF343446),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      place['description'] ?? 'Tidak ada deskripsi.',
+                      style: const TextStyle(fontSize: 16, height: 1.4),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    if (place['price_range'] != null)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Rentang Harga",
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF343446)),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            place['price_range'],
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
