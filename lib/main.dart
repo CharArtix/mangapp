@@ -443,7 +443,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
 
                     _buildLabel('Email'),
                     const SizedBox(height: 8),
@@ -611,7 +611,7 @@ class CurvedHeaderClipper extends CustomClipper<Path> {
 }
 
 // -----------------------------------------------------------------------------
-// SHARED WIDGETS
+// HEADER WIDGETS
 // -----------------------------------------------------------------------------
 
 Widget _buildHeader(double screenHeight, double screenWidth) {
@@ -635,10 +635,10 @@ Widget _buildHeader(double screenHeight, double screenWidth) {
         ),
       ),
       Positioned(
-        top: screenHeight * 0.08, // Logo naik sedikit
+        top: screenHeight * 0.06, // Logo naik sedikit
         child: Image.asset(
           'assets/images/logo_mangapp.png',
-          width: screenWidth * 0.65,
+          width: screenWidth * 0.60,
           fit: BoxFit.contain,
         ),
       ),
@@ -1170,116 +1170,173 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildProfileView() {
-    return Column(
-      children: [
-        // Header Merah dengan Avatar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 40, 24, 30),
-          child: Column(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                ),
-                child: const CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.white24,
-                  child: Icon(Icons.person, size: 60, color: Colors.white),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _isLoadingProfile 
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Text(
-                      _username ?? 'Pengguna',
-                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
-                    ),
-              const SizedBox(height: 4),
-              Text(
-                _email ?? '',
-                style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontFamily: 'Inter'),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-        
-        // Konten Putih Melengkung
-        Expanded(
-          child: Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 40),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+    return Container(
+      color: Colors.white, // Pastikan background putih
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 20),
+          // Judul Header
+          const Text(
+            'Profile',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF343446),
             ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Akun Saya", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF343446))),
-                  const SizedBox(height: 16),
-                  
-                  _buildProfileMenuItem(Icons.edit_outlined, "Edit Profil", () {}),
-                  _buildProfileMenuItem(Icons.settings_outlined, "Pengaturan", () {}),
-                  _buildProfileMenuItem(Icons.lock_outline, "Ganti Password", () {}),
-                  
-                  const SizedBox(height: 24),
-                  const Text("Lainnya", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF343446))),
-                  const SizedBox(height: 16),
-                  
-                  _buildProfileMenuItem(Icons.help_outline, "Bantuan", () {}),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // Tombol Logout
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _handleLogout,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFDE8E8),
-                        foregroundColor: const Color(0xFFC62828),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: const BorderSide(color: Color(0xFFC62828)),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.logout),
-                          SizedBox(width: 8),
-                          Text("Keluar", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
+          ),
+
+          const SizedBox(height: 50),
+
+          // Avatar Icon (Lingkaran Tebal)
+          Container(
+            width: 110,
+            height: 110,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.black,
+                width: 4, // Ketebalan garis lingkaran
+              ),
+            ),
+            child: const Center(
+              child: Icon(Icons.person, size: 70, color: Colors.black),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Username
+          _isLoadingProfile
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(
+                  _username ?? 'Username',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF343446),
                   ),
-                  const SizedBox(height: 50),
+                ),
+
+          const SizedBox(height: 4),
+
+          // Email
+          Text(
+            _email ?? 'user@email.com',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.black.withOpacity(0.5),
+            ),
+          ),
+
+          const SizedBox(height: 60),
+
+          // Menu Items (Edit Profile & Ganti Password)
+          _buildSimpleMenuItem(
+            icon: Icons.edit_outlined,
+            title: "Edit Profile",
+            onTap: () {},
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildSimpleMenuItem(
+            icon: Icons.lock_outline,
+            title: "Ganti Password",
+            onTap: () {},
+          ),
+
+          const Spacer(),
+
+          // Tombol Sign Out (Merah Solid & Shadow)
+          Container(
+            width: double.infinity,
+            height: 55,
+            margin: const EdgeInsets.only(
+              bottom: 120,
+            ), // Jarak dari bawah (untuk navbar)
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFA22523).withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: _handleLogout,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFA22523), // Warna Merah Gelap
+                foregroundColor: Colors.white,
+                elevation:
+                    0, // Kita pakai shadow manual di Container agar lebih soft
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(
+                    Icons.logout_rounded,
+                    color: Colors.white,
+                  ), // Icon Pintu Keluar
+                  SizedBox(width: 10),
+                  Text(
+                    "Sign Out",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildProfileMenuItem(IconData icon, String title, VoidCallback onTap) {
-    return ListTile(
+  // Widget Helper untuk Item Menu Sederhana
+  Widget _buildSimpleMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
       onTap: onTap,
-      contentPadding: EdgeInsets.zero,
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
-        child: Icon(icon, color: const Color(0xFF343446), size: 22),
+      splashColor: Colors.grey.shade200,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8), // Spacing klik
+        child: Row(
+          children: [
+            // Icon Kiri
+            Icon(icon, color: const Color(0xFF343446), size: 26),
+            const SizedBox(width: 16),
+
+            // Teks Judul
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF343446),
+                ),
+              ),
+            ),
+
+            // Panah Kanan
+            const Icon(Icons.chevron_right, color: Colors.black54, size: 24),
+          ],
+        ),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF343446))),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
     );
   }
 
@@ -1319,18 +1376,28 @@ class _HomePageState extends State<HomePage> {
         bodyContent = _buildHomeView();
     }
 
+    bool isProfileTab = _selectedIndex == 3;
+
     return Scaffold(
       extendBody: true,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFE53935), Color(0xFFC62828)],
-          ),
+        // JIKA Profile: Putih, JIKA Lainnya: Gradien Merah
+        decoration: BoxDecoration(
+          color: isProfileTab ? Colors.white : null,
+          gradient: isProfileTab
+              ? null
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFFE53935), Color(0xFFC62828)],
+                ),
         ),
         width: double.infinity,
-        child: SafeArea(child: bodyContent),
+        child: SafeArea(
+          // Pada profile, kita ingin content mentok atas, jadi sesuaikan bottom-nya saja
+          bottom: false,
+          child: bodyContent,
+        ),
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
@@ -1341,7 +1408,7 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               height: 70,
               decoration: BoxDecoration(
-                color: const Color(0xFFE53935).withOpacity(0.95),
+                color: const Color(0xFFA22523).withOpacity(0.95),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: BottomNavigationBar(
