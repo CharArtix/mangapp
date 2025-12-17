@@ -1173,89 +1173,85 @@ class _HomePageState extends State<HomePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           itemCount: favorites.length,
                           itemBuilder: (_, i) {
-                            final place = favorites[i];
-                            final imageUrl = place['image_url'];
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(14),
-                                    child: Container(
-                                      height: 70,
-                                      width: 70,
-                                      color: Colors.grey[200],
-                                      child:
-                                          (imageUrl != null &&
-                                              imageUrl.toString().isNotEmpty)
-                                          ? Image.network(
-                                              imageUrl,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) =>
-                                                  const Icon(
-                                                    Icons.broken_image,
-                                                    color: Colors.grey,
-                                                  ),
-                                            )
-                                          : const Icon(
-                                              Icons.image,
-                                              color: Colors.grey,
-                                            ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          place['name'] ?? 'Nama Tempat',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        Text(
-                                          place['price_range'] ?? '',
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.star,
-                                              size: 16,
-                                              color: Colors.orange,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              place['rating']?.toString() ??
-                                                  "-",
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+  final place = favorites[i];
+  final imageUrl = place['image_url'];
+
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailTempatPage(place: place),
+        ),
+      );
+    },
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              height: 70,
+              width: 70,
+              color: Colors.grey[200],
+              child: (imageUrl != null && imageUrl.toString().isNotEmpty)
+                  ? Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.broken_image, color: Colors.grey),
+                    )
+                  : const Icon(Icons.image, color: Colors.grey),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  place['name'] ?? 'Nama Tempat',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  place['price_range'] ?? '',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                  ),
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.star, size: 16, color: Colors.orange),
+                    const SizedBox(width: 4),
+                    Text(place['rating']?.toString() ?? "-"),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+},
+
                         ),
                 ),
               ],
@@ -2991,140 +2987,806 @@ class _RecommendationPageState extends State<RecommendationPage> {
   }
 }
 
-class DetailTempatPage extends StatelessWidget {
+  // --- UI Detail Tempat ---
+class DetailTempatPage extends StatefulWidget {
   final Map<String, dynamic> place;
 
   const DetailTempatPage({super.key, required this.place});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Stack(
-        children: [
-          // Gambar Header
-          SizedBox(
-            height: 300,
-            width: double.infinity,
-            child: Image.network(
-              place['image'] ?? place['image_url'] ?? '',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  Container(color: Colors.black12, height: 300),
-            ),
-          ),
+  State<DetailTempatPage> createState() => _DetailTempatPageState();
+}
 
-          // Konten Putih
-          DraggableScrollableSheet(
-            initialChildSize: 0.55,
-            minChildSize: 0.55,
-            maxChildSize: 0.9,
-            builder: (context, controller) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 24,
+class _DetailTempatPageState extends State<DetailTempatPage> {
+  final supabase = Supabase.instance.client;
+
+  bool _isLoadingMenu = true;
+  bool _isLoadingReview = true;
+  bool _isMenuSelected = true;
+  bool _isFavorite = false;
+
+  List<Map<String, dynamic>> _menus = [];
+  List<Map<String, dynamic>> _reviews = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMenus();
+    _fetchReviews();
+  }
+
+  // ================= FETCH MENU =================
+  Future<void> _fetchMenus() async {
+    try {
+      final res = await supabase
+          .from('menus')
+          .select()
+          .eq('place_id', widget.place['id'])
+          .order('created_at');
+
+      setState(() {
+        _menus = List<Map<String, dynamic>>.from(res);
+        _isLoadingMenu = false;
+      });
+    } catch (e) {
+      debugPrint('Error fetch menu: $e');
+      setState(() {
+        _isLoadingMenu = false;
+      });
+    }
+  }
+
+  // ================= FETCH REVIEW =================
+  Future<void> _fetchReviews() async {
+    try {
+      final res = await supabase
+          .from('reviews')
+          .select('rating, comment, profiles(username)')
+          .eq('place_id', widget.place['id'])
+          .order('created_at', ascending: false);
+
+      setState(() {
+        _reviews = List<Map<String, dynamic>>.from(res);
+        _isLoadingReview = false;
+      });
+    } catch (e) {
+      debugPrint('Error fetch review: $e');
+      setState(() {
+        _isLoadingReview = false;
+      });
+    }
+  }
+
+  void _onBottomNavTapped(int index) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => HomePage(initialIndex: index)),
+      (route) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final place = widget.place;
+    final imageUrl = place['image_url'] ?? '';
+    final name = place['name'] ?? 'Tanpa Nama';
+    final address = place['address'] ?? 'Alamat tidak tersedia';
+    final rating = (place['rating'] ?? 0).toString();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFC8C8C8),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ================= HEADER IMAGE =================
+            Stack(
+              children: [
+                Container(
+                  height: 180,
+                  width: double.infinity,
+                  color: const Color(0xFFB0B0B0),
+                  child: imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.camera_alt,
+                            size: 60,
+                            color: Color(0xFF6B6B6B),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.camera_alt,
+                          size: 60,
+                          color: Color(0xFF6B6B6B),
+                        ),
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-                child: ListView(
-                  controller: controller,
-                  children: [
-                    Text(
-                      place['name'] ?? 'Tanpa Nama',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF343446),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        size: 24,
+                        color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isFavorite = !_isFavorite;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        _isFavorite ? Icons.favorite : Icons.favorite_border,
+                        size: 28,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
 
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          color: Colors.red,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            place['address'] ?? 'Alamat tidak tersedia',
-                            style: const TextStyle(fontSize: 16),
+            // ================= WHITE CONTENT AREA =================
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  children: [
+                    // Nama Tempat & Rating
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                          Row(
+                            children: [
+                              const Icon(Icons.star, color: Color(0xFFFF8A00), size: 24),
+                              const SizedBox(width: 4),
+                              Text(
+                                rating,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
 
                     const SizedBox(height: 16),
 
-                    Row(
+                    // Content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Alamat atau Tab Section
+                            if (_isMenuSelected) 
+                              _buildAlamatSection(address)
+                            else
+                              const SizedBox.shrink(),
+
+                            const SizedBox(height: 16),
+
+                            // Menu & Review Tabs
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _isMenuSelected = true;
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        decoration: BoxDecoration(
+                                          color: _isMenuSelected ? const Color(0xFF8B1A1A) : Colors.white,
+                                          borderRadius: BorderRadius.circular(30),
+                                          border: Border.all(
+                                            color: _isMenuSelected ? const Color(0xFF8B1A1A) : const Color(0xFFD0D0D0),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            'Menu',
+                                            style: TextStyle(
+                                              color: _isMenuSelected ? Colors.white : Colors.black,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _isMenuSelected = false;
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        decoration: BoxDecoration(
+                                          color: !_isMenuSelected ? const Color(0xFF8B1A1A) : Colors.white,
+                                          borderRadius: BorderRadius.circular(30),
+                                          border: Border.all(
+                                            color: !_isMenuSelected ? const Color(0xFF8B1A1A) : const Color(0xFFD0D0D0),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            'Review',
+                                            style: TextStyle(
+                                              color: !_isMenuSelected ? Colors.white : Colors.black,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Content Area
+                            if (_isMenuSelected) _buildMenuContent() else _buildReviewContent(),
+                            
+                            const SizedBox(height: 100),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  // ================= ALAMAT SECTION =================
+  Widget _buildAlamatSection(String address) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Alamat',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            height: 140,
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8E8E8),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Stack(
+              children: [
+                // Placeholder map atau bisa diganti dengan Google Maps
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.map, size: 40, color: Colors.grey[600]),
+                      const SizedBox(height: 8),
+                      Text(
+                        address,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= MENU CONTENT =================
+  Widget _buildMenuContent() {
+    if (_isLoadingMenu) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(
+            color: Color(0xFF8B1A1A),
+          ),
+        ),
+      );
+    }
+
+    if (_menus.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(32),
+        child: Center(
+          child: Text(
+            'Menu belum tersedia',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 0.85,
+        ),
+        itemCount: _menus.length,
+        itemBuilder: (context, index) {
+          return _buildMenuItem(_menus[index]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(Map<String, dynamic> menu) {
+    final imageUrl = menu['image_url'] ?? '';
+    final name = menu['name'] ?? 'Menu';
+    final price = menu['price'] ?? 0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              Container(
+                height: 110,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFB0B0B0),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Center(
+                            child: Icon(Icons.camera_alt, size: 40, color: Color(0xFF6B6B6B)),
+                          ),
+                        )
+                      : const Center(
+                          child: Icon(Icons.camera_alt, size: 40, color: Color(0xFF6B6B6B)),
+                        ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.favorite_border, size: 18, color: Colors.black),
+                ),
+              ),
+            ],
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Rp ${price.toString()}',
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 1.5),
+                      ),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.black,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= REVIEW CONTENT =================
+  Widget _buildReviewContent() {
+    return Column(
+      children: [
+        // Video Review Section
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Video Review',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 110,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.play_circle_filled,
+                      color: Colors.white,
+                      size: 50,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
                       children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 20),
-                        const SizedBox(width: 6),
-                        Text(
-                          (place['rating'] ?? 0).toString(),
-                          style: const TextStyle(fontSize: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B1A1A),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Beri rating tempat ini',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(
+                                  5,
+                                  (index) => const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 2),
+                                    child: Icon(
+                                      Icons.star,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE0E0E0)),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    widget.place['rating']?.toStringAsFixed(1) ?? '4.8',
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        _buildRatingBar(5, 0.8),
+                                        _buildRatingBar(4, 0.6),
+                                        _buildRatingBar(3, 0.3),
+                                        _buildRatingBar(2, 0.1),
+                                        _buildRatingBar(1, 0.05),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(
+                                  5,
+                                  (index) => const Icon(
+                                    Icons.star,
+                                    color: Color(0xFFFF8A00),
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
 
-                    const SizedBox(height: 20),
-
-                    const Text(
-                      "Deskripsi",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF343446),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      place['description'] ?? 'Tidak ada deskripsi.',
-                      style: const TextStyle(fontSize: 16, height: 1.4),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    if (place['price_range'] != null)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Rentang Harga",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF343446),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            place['price_range'],
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
-
-                    const SizedBox(height: 30),
-                  ],
-                ),
-              );
+        // Reviews List
+        if (_isLoadingReview)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(
+                color: Color(0xFF8B1A1A),
+              ),
+            ),
+          )
+        else if (_reviews.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(32),
+            child: Center(
+              child: Text(
+                'Belum ada ulasan',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: _reviews.length,
+            itemBuilder: (context, index) {
+              return _buildReviewItem(_reviews[index]);
             },
           ),
+      ],
+    );
+  }
+
+  Widget _buildRatingBar(int stars, double percentage) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Row(
+        children: [
+          Text('$stars', style: const TextStyle(fontSize: 10)),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Stack(
+              children: [
+                Container(
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0E0E0),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                FractionallySizedBox(
+                  widthFactor: percentage,
+                  child: Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF8A00),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildReviewItem(Map<String, dynamic> review) {
+    final username = review['profiles']?['username'] ?? 'account178465';
+    final rating = review['rating'] ?? 0;
+    final comment = review['comment'] ?? 'Tidak ada komentar';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFE4E4),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.account_circle, size: 28, color: Colors.black87),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      username,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      rating.toString(),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  comment,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black87,
+                    height: 1.4,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= BOTTOM NAV =================
+  Widget _buildBottomNav() {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      height: 70,
+      decoration: BoxDecoration(
+        color: const Color(0xFF8B1A1A),
+        borderRadius: BorderRadius.circular(35),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(35),
+        child: BottomNavigationBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white.withOpacity(0.5),
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          type: BottomNavigationBarType.fixed,
+          currentIndex: 0,
+          onTap: _onBottomNavTapped,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home, size: 28), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.favorite, size: 28), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.schedule, size: 28), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.person, size: 28), label: ''),
+          ],
+        ),
       ),
     );
   }

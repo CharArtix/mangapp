@@ -18,28 +18,17 @@ Member:
 1.2 Inovasi Ide
 “Mangapp” memiliki beberapa fitur di dalamnya yang menunjang dalam
 merekomendasikan makanan. Mangapp juga menyediakan fitur unggulan yang menjadi pembeda dari platform sejenis seperti “TripAdvisor”, ulasannya yang langsung dari kalangan mahasiswa sehingga lebih relevan dengan pengguna dan terintegrasi dengan TikTok, navigasi peta, history pengeluaran pengguna, dan fitur hidden gem. Dalam mengembangkan aplikasi mencari makanan terdekat, kami mengusulkan inovasi yang tidak hanya mempertimbangkan lokasi fisik, tetapi juga memperhatikan preferensi dan kebutuhan unik setiap pengguna. Berikut adalah rincian beberapa fitur inovatif yang dapat diintegrasikan ke dalam aplikasi tersebut:
-- Sistem Rekomendasi
-Aplikasi ini dapat menggunakan weighted model  untuk memahami preferensi makanan pengguna berdasarkan histori pencarian, ulasan, dan pemesanan sebelumnya.
-Dengan mempertimbangkan konteks seperti rating/review, jarak, waktu hari, dan hari hari khusus, aplikasi dapat memberikan rekomendasi yang lebih relevan dan menarik.
+- Sistem Rekomendasi: Aplikasi ini dapat menggunakan weighted model  untuk memahami preferensi makanan pengguna berdasarkan histori pencarian, ulasan, dan pemesanan sebelumnya. Dengan mempertimbangkan konteks seperti rating/review, jarak, waktu hari, dan hari hari khusus, aplikasi dapat memberikan rekomendasi yang lebih relevan dan menarik.
 
-- Rating dan ulasan
-Selain memberikan rating umum, pengguna dapat memberikan penilaian lebih spesifik pada aspek-aspek seperti rasa, pelayanan, suasana, dan nilai uang.
-Sistem ini memberikan informasi yang lebih terperinci kepada pengguna yang mencari pengalaman makan yang spesifik.
+- Rating dan ulasan: Selain memberikan rating umum, pengguna dapat memberikan penilaian lebih spesifik pada aspek-aspek seperti rasa, pelayanan, suasana, dan nilai uang. Sistem ini memberikan informasi yang lebih terperinci kepada pengguna yang mencari pengalaman makan yang spesifik.
 
-- Maps
-Integrasi peta untuk memberikan pandangan lebih realistis tentang lokasi restoran dan lingkungan sekitarnya.
-Pengguna dapat dengan mudah mengenali bangunan dan arah dengan lebih jelas.
+- Maps: Integrasi peta untuk memberikan pandangan lebih realistis tentang lokasi restoran dan lingkungan sekitarnya. Pengguna dapat dengan mudah mengenali bangunan dan arah dengan lebih jelas.
 
-- Hidden Gem
-Menggunakan algoritma cerdas yang menyoroti tempat makan tersembunyi atau kurang dikenal yang mungkin sesuai dengan preferensi unik pengguna.
-Pencarian berdasarkan cerita atau pengalaman pengguna di tempat-tempat makan yang kurang dikenal.
-Pengguna (user) dapat melakukan ulasan tentang hidden gems, untuk tempat yang sepi pengunjung tetapi dengan makanan yang sangat enak.
+- Hidden Gem: Menggunakan algoritma cerdas yang menyoroti tempat makan tersembunyi atau kurang dikenal yang mungkin sesuai dengan preferensi unik pengguna. Pencarian berdasarkan cerita atau pengalaman pengguna di tempat-tempat makan yang kurang dikenal. Pengguna (user) dapat melakukan ulasan tentang hidden gems, untuk tempat yang sepi pengunjung tetapi dengan makanan yang sangat enak.
 
-- Video Review (Tiktok)
-Pada aplikasi ini akan terintegrasi dengan Tiktok, yang dimana tiktok sekarang menjadi sosial media yang banyak orang gunakan yang membuat orang mau mencobanya tetapi tidak tau tempat nya jauh atau tidak, benar enak atau tidak.
+- Video Review (Tiktok): Pada aplikasi ini akan terintegrasi dengan Tiktok, yang dimana tiktok sekarang menjadi sosial media yang banyak orang gunakan yang membuat orang mau mencobanya tetapi tidak tau tempat nya jauh atau tidak, benar enak atau tidak.
 
-- History
-Pada fitur ini user dapat mengetahui bahwa mereka membeli apa, dimana, dan berapa banyak pengeluaran user pada hari ini
+- History: Pada fitur ini user dapat mengetahui bahwa mereka membeli apa, dimana, dan berapa banyak pengeluaran user pada hari ini
 
 ## Getting Started
 
