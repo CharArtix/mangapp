@@ -83,14 +83,14 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login Gagal: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Login Gagal: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -157,19 +157,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: _obscurePassword,
                       decoration: _inputDecoration('Masukkan Password anda')
                           .copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            size: 20,
-                            color: Colors.black.withOpacity(0.4),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                size: 20,
+                                color: Colors.black.withOpacity(0.4),
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
                           ),
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
-                          ),
-                        ),
-                      ),
                     ),
                     Align(
                       alignment: Alignment.centerRight,
@@ -204,8 +204,12 @@ class _LoginScreenState extends State<LoginScreen> {
             height: fixedButtonAreaHeight,
             child: Container(
               color: Colors.white,
-              padding:
-                  const EdgeInsets.only(left: 30, right: 30, bottom: 20, top: 10),
+              padding: const EdgeInsets.only(
+                left: 30,
+                right: 30,
+                bottom: 20,
+                top: 10,
+              ),
               child: Column(
                 children: [
                   SizedBox(
@@ -317,9 +321,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final password = _passwordController.text;
 
     if (email.isEmpty || username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mohon isi semua data')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Mohon isi semua data')));
       return;
     }
 
@@ -423,18 +427,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       obscureText: _obscurePassword,
                       decoration: _inputDecoration('Minimal 6 karakter')
                           .copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: Colors.black.withOpacity(0.4),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: Colors.black.withOpacity(0.4),
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
                           ),
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
-                          ),
-                        ),
-                      ),
                     ),
                     const SizedBox(height: 50),
                   ],
@@ -449,8 +453,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             height: fixedButtonAreaHeight,
             child: Container(
               color: Colors.white,
-              padding:
-                  const EdgeInsets.only(left: 30, right: 30, bottom: 20, top: 10),
+              padding: const EdgeInsets.only(
+                left: 30,
+                right: 30,
+                bottom: 20,
+                top: 10,
+              ),
               child: Column(
                 children: [
                   SizedBox(
@@ -777,8 +785,9 @@ class _HomePageState extends State<HomePage> {
           .eq('user_id', user.id)
           .order('created_at', ascending: false);
 
-      final List<Map<String, dynamic>> data =
-          List<Map<String, dynamic>>.from(response);
+      final List<Map<String, dynamic>> data = List<Map<String, dynamic>>.from(
+        response,
+      );
 
       _processHistoryData(data);
     } catch (e) {
@@ -843,10 +852,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _formatCurrency(double amount) {
-    return "Rp.${amount.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        )}";
+    return "Rp.${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
   }
 
   // --- PROFILE ---
@@ -890,8 +896,9 @@ class _HomePageState extends State<HomePage> {
       );
     } catch (e) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Logout Gagal: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Logout Gagal: $e')));
     }
   }
 
@@ -928,7 +935,10 @@ class _HomePageState extends State<HomePage> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(30),
@@ -993,7 +1003,10 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       const Text(
                         'Perguruan Tinggi',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       GestureDetector(
                         onTap: () {
@@ -1044,7 +1057,10 @@ class _HomePageState extends State<HomePage> {
                               ),
                               child: Row(
                                 children: [
-                                  Icon(universities[i]['icon'], color: Colors.black87),
+                                  Icon(
+                                    universities[i]['icon'],
+                                    color: Colors.black87,
+                                  ),
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Text(
@@ -1073,65 +1089,64 @@ class _HomePageState extends State<HomePage> {
   // UI FAVORITES VIEW (TEMPAT + MENU dalam 1 halaman)
   // ---------------------------------------------------------------------------
   Widget _buildFavoritesView() {
-  return Container(
-    color: Colors.white, // ✅ full putih
-    child: SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
-        children: [
-          const Text(
-            'Tempat Favorit',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
+    return Container(
+      color: Colors.white, // ✅ full putih
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
+          children: [
+            const Text(
+              'Tempat Favorit',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
 
-          if (isLoadingFav)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else if (favorites.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(12),
-                child: Text("Belum ada tempat favorit"),
-              ),
-            )
-          else
-            ...favorites.map((place) => _favoritePlaceCard(place)).toList(),
+            if (isLoadingFav)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (favorites.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text("Belum ada tempat favorit"),
+                ),
+              )
+            else
+              ...favorites.map((place) => _favoritePlaceCard(place)).toList(),
 
-          const SizedBox(height: 26),
+            const SizedBox(height: 26),
 
-          const Text(
-            'Menu Favorit',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
+            const Text(
+              'Menu Favorit',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
 
-          if (isLoadingFavMenus)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else if (favoriteMenus.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(12),
-                child: Text("Belum ada menu favorit"),
-              ),
-            )
-          else
-            ...favoriteMenus.map((m) => _favoriteMenuCard(m)).toList(),
-        ],
+            if (isLoadingFavMenus)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (favoriteMenus.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text("Belum ada menu favorit"),
+                ),
+              )
+            else
+              ...favoriteMenus.map((m) => _favoriteMenuCard(m)).toList(),
+          ],
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget _favoritePlaceCard(Map<String, dynamic> place) {
     final imageUrl = place['image_url'];
@@ -1151,7 +1166,7 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withOpacity(0.4),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -1189,10 +1204,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   Text(
                     place['price_range'] ?? '',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: const TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   Row(
                     children: [
@@ -1226,7 +1238,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.4),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -1302,7 +1314,7 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFC62828).withOpacity(0.4),
+                color: const Color(0xFFC62828).withOpacity(0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 8),
               ),
@@ -1344,48 +1356,59 @@ class _HomePageState extends State<HomePage> {
           child: _isLoadingHistory
               ? const Center(child: CircularProgressIndicator())
               : _groupedHistory.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.receipt_long, size: 60, color: Colors.grey[300]),
-                          const SizedBox(height: 10),
-                          Text("Belum ada riwayat", style: TextStyle(color: Colors.grey[500])),
-                        ],
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.receipt_long,
+                        size: 60,
+                        color: Colors.grey[300],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
-                      itemCount: _groupedHistory.length,
-                      itemBuilder: (context, index) {
-                        String dateKey = _groupedHistory.keys.elementAt(index);
-                        List<Map<String, dynamic>> items = _groupedHistory[dateKey]!;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12, top: 10),
-                              child: Text(
-                                dateKey,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF343446),
-                                ),
-                              ),
+                      const SizedBox(height: 10),
+                      Text(
+                        "Belum ada riwayat",
+                        style: TextStyle(color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                  itemCount: _groupedHistory.length,
+                  itemBuilder: (context, index) {
+                    String dateKey = _groupedHistory.keys.elementAt(index);
+                    List<Map<String, dynamic>> items =
+                        _groupedHistory[dateKey]!;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12, top: 10),
+                          child: Text(
+                            dateKey,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF343446),
                             ),
-                            ...items.map((item) => _buildHistoryItem(item)).toList(),
-                            const SizedBox(height: 10),
-                          ],
-                        );
-                      },
-                    ),
+                          ),
+                        ),
+                        ...items
+                            .map((item) => _buildHistoryItem(item))
+                            .toList(),
+                        const SizedBox(height: 10),
+                      ],
+                    );
+                  },
+                ),
         ),
       ],
     );
   }
 
   Widget _buildHistoryItem(Map<String, dynamic> item) {
+    // Ambil data dari relasi (Safety check)
     final menu = item['menus'] ?? {};
     final place = menu['places'] ?? {};
 
@@ -1397,23 +1420,29 @@ class _HomePageState extends State<HomePage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7),
+        color: Colors.white, // 1. Background Putih
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.shade200, // 2. Border Tipis
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.4), // 3. Shadow Super Soft
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
           )
         ],
       ),
       child: Row(
         children: [
+          // Gambar Menu / Placeholder
           Container(
-            width: 60,
-            height: 60,
+            width: 80, // Ukuran sedikit lebih besar agar proporsional
+            height: 80,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: const Color(0xFFF5F5F5), // 4. Placeholder Abu Sangat Terang
               borderRadius: BorderRadius.circular(12),
             ),
             child: (menuImage != null && menuImage.toString().isNotEmpty)
@@ -1422,39 +1451,54 @@ class _HomePageState extends State<HomePage> {
                     child: Image.network(
                       menuImage,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.camera_alt, color: Colors.white),
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(Icons.broken_image,
+                            color: Colors.grey, size: 24),
+                      ),
                     ),
                   )
-                : const Icon(Icons.camera_alt, color: Colors.white, size: 30),
+                : const Center(
+                    child: Icon(
+                      Icons.camera_alt,
+                      color: Color(0xFF9E9E9E), // 5. Ikon Kamera Lebih Gelap
+                      size: 32,
+                    ),
+                  ),
           ),
           const SizedBox(width: 16),
+
+          // Detail Text
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   menuName,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF343446),
+                    color: Color(0xFF343446), // Warna teks utama gelap
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   placeName,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withOpacity(0.5), // Warna teks sekunder
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
                   _formatCurrency((item['price'] ?? 0).toDouble()),
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                     color: Color(0xFF343446),
                   ),
                 ),
@@ -1522,9 +1566,17 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(height: 60),
-          _buildSimpleMenuItem(icon: Icons.edit_outlined, title: "Edit Profile", onTap: () {}),
+          _buildSimpleMenuItem(
+            icon: Icons.edit_outlined,
+            title: "Edit Profile",
+            onTap: () {},
+          ),
           const SizedBox(height: 20),
-          _buildSimpleMenuItem(icon: Icons.lock_outline, title: "Ganti Password", onTap: () {}),
+          _buildSimpleMenuItem(
+            icon: Icons.lock_outline,
+            title: "Ganti Password",
+            onTap: () {},
+          ),
           const Spacer(),
           Container(
             width: double.infinity,
@@ -1619,7 +1671,6 @@ class _HomePageState extends State<HomePage> {
         bodyContent = _buildHomeView();
     }
 
-    // sesuai punyamu: tab 2 & 3 putih
     bool isProfileTab = _selectedIndex == 2 || _selectedIndex == 3;
 
     return Scaffold(
@@ -1636,76 +1687,72 @@ class _HomePageState extends State<HomePage> {
                 ),
         ),
         width: double.infinity,
-        child: SafeArea(
-          bottom: false,
-          child: bodyContent,
-        ),
+        child: SafeArea(bottom: false, child: bodyContent),
       ),
       bottomNavigationBar: Container(
-  color: Colors.white, // ⬅️ ini kunci biar bawahnya nggak merah
-  child: Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          height: 70,
-          decoration: BoxDecoration(
-            color: const Color(0xFFA22523).withOpacity(0.95),
+        color: Colors.white, // ⬅️ ini kunci biar bawahnya nggak merah
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(30),
-          ),
-          child: BottomNavigationBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            selectedItemColor: Colors.white,
-            unselectedItemColor: Colors.white.withOpacity(0.5),
-            showSelectedLabels: false,
-            showUnselectedLabels: false,
-            type: BottomNavigationBarType.fixed,
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            items: [
-              BottomNavigationBarItem(
-                icon: Icon(
-                  _selectedIndex == 0
-                      ? Icons.home
-                      : Icons.home_outlined,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                height: 70,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFA22523).withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(30),
                 ),
-                label: '',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(
-                  _selectedIndex == 1
-                      ? Icons.favorite
-                      : Icons.favorite_border,
+                child: BottomNavigationBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  selectedItemColor: Colors.white,
+                  unselectedItemColor: Colors.white.withOpacity(0.5),
+                  showSelectedLabels: false,
+                  showUnselectedLabels: false,
+                  selectedFontSize: 0,
+                  unselectedFontSize: 0,
+                  type: BottomNavigationBarType.fixed,
+                  currentIndex: _selectedIndex,
+                  onTap: _onItemTapped,
+                  items: [
+                    BottomNavigationBarItem(
+                      icon: Icon(
+                        _selectedIndex == 0 ? Icons.home : Icons.home_outlined,
+                      ),
+                      label: '',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(
+                        _selectedIndex == 1
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                      ),
+                      label: '',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(
+                        _selectedIndex == 2
+                            ? Icons.history
+                            : Icons.history_toggle_off,
+                      ),
+                      label: '',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(
+                        _selectedIndex == 3
+                            ? Icons.person
+                            : Icons.person_outline,
+                      ),
+                      label: '',
+                    ),
+                  ],
                 ),
-                label: '',
               ),
-              BottomNavigationBarItem(
-                icon: Icon(
-                  _selectedIndex == 2
-                      ? Icons.history
-                      : Icons.history_toggle_off,
-                ),
-                label: '',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(
-                  _selectedIndex == 3
-                      ? Icons.person
-                      : Icons.person_outline,
-                ),
-                label: '',
-              ),
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  ),
-),
-
     );
   }
 }
@@ -1775,7 +1822,8 @@ class _PlaceListPageState extends State<PlaceListPage> {
       }
 
       loadedPlaces.sort(
-        (a, b) => (b['favorite_count'] as int).compareTo(a['favorite_count'] as int),
+        (a, b) =>
+            (b['favorite_count'] as int).compareTo(a['favorite_count'] as int),
       );
 
       setState(() {
@@ -1825,8 +1873,9 @@ class _PlaceListPageState extends State<PlaceListPage> {
       setState(() {
         places[idx]['is_favorite'] = currentlyFav;
       });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -1866,19 +1915,29 @@ class _PlaceListPageState extends State<PlaceListPage> {
                 onTap: _onBottomNavTapped,
                 items: [
                   BottomNavigationBarItem(
-                    icon: Icon(bottomIndex == 0 ? Icons.home : Icons.home_outlined),
+                    icon: Icon(
+                      bottomIndex == 0 ? Icons.home : Icons.home_outlined,
+                    ),
                     label: '',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(bottomIndex == 1 ? Icons.favorite : Icons.favorite_border),
+                    icon: Icon(
+                      bottomIndex == 1 ? Icons.favorite : Icons.favorite_border,
+                    ),
                     label: '',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(bottomIndex == 2 ? Icons.history : Icons.history_toggle_off),
+                    icon: Icon(
+                      bottomIndex == 2
+                          ? Icons.history
+                          : Icons.history_toggle_off,
+                    ),
                     label: '',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(bottomIndex == 3 ? Icons.person : Icons.person_outline),
+                    icon: Icon(
+                      bottomIndex == 3 ? Icons.person : Icons.person_outline,
+                    ),
                     label: '',
                   ),
                 ],
@@ -1911,7 +1970,10 @@ class _PlaceListPageState extends State<PlaceListPage> {
                     children: [
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
-                        child: const Icon(Icons.arrow_back, color: Colors.white),
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       const Icon(Icons.location_on, color: Colors.white),
@@ -1935,7 +1997,9 @@ class _PlaceListPageState extends State<PlaceListPage> {
                 child: Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(32),
+                    ),
                   ),
                   child: isLoading
                       ? const Center(child: CircularProgressIndicator())
@@ -1944,7 +2008,12 @@ class _PlaceListPageState extends State<PlaceListPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(20, 25, 20, 10),
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  25,
+                                  20,
+                                  10,
+                                ),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 14,
@@ -1988,7 +2057,10 @@ class _PlaceListPageState extends State<PlaceListPage> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           const Spacer(),
         ],
       ),
@@ -2025,7 +2097,7 @@ class _PlaceListPageState extends State<PlaceListPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withOpacity(0.4),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -2043,8 +2115,10 @@ class _PlaceListPageState extends State<PlaceListPage> {
                     ? Image.network(
                         imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.image_not_supported, color: Colors.grey),
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey,
+                        ),
                       )
                     : const Icon(Icons.image_not_supported, color: Colors.grey),
               ),
@@ -2063,7 +2137,10 @@ class _PlaceListPageState extends State<PlaceListPage> {
                   ),
                   Text(
                     place["name"]?.toString() ?? "Nama Tempat",
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Text(
                     place["price_range"]?.toString() ?? "",
@@ -2265,6 +2342,45 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
     }
   }
 
+  Future<void> _addMenuToHistory(int menuId, dynamic priceRaw) async {
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Silakan login terlebih dahulu')),
+        );
+        return;
+      }
+
+      // Pastikan harga dalam format angka
+      final price = (priceRaw is num)
+          ? priceRaw
+          : double.tryParse(priceRaw.toString()) ?? 0;
+
+      try {
+        await supabase.from('history').insert({
+          'user_id': user.id,
+          'menu_id': menuId,
+          'price': price, // Simpan harga saat transaksi
+          // 'created_at': default now() di database
+        });
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Berhasil ditambahkan ke Riwayat!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal menambah riwayat: $e')));
+      }
+    }
+
   // ---------------- REVIEW (punyamu, biarkan) ----------------
   Future<void> _fetchReviews() async {
     try {
@@ -2394,8 +2510,11 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                           ),
                           Row(
                             children: [
-                              const Icon(Icons.star,
-                                  color: Color(0xFFFF8A00), size: 24),
+                              const Icon(
+                                Icons.star,
+                                color: Color(0xFFFF8A00),
+                                size: 24,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 rating,
@@ -2421,19 +2540,27 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                             const SizedBox(height: 16),
 
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () => setState(() => _isMenuSelected = true),
+                                      onTap: () => setState(
+                                        () => _isMenuSelected = true,
+                                      ),
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: _isMenuSelected
                                               ? const Color(0xFF8B1A1A)
                                               : Colors.white,
-                                          borderRadius: BorderRadius.circular(30),
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
                                           border: Border.all(
                                             color: _isMenuSelected
                                                 ? const Color(0xFF8B1A1A)
@@ -2445,7 +2572,9 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                                           child: Text(
                                             'Menu',
                                             style: TextStyle(
-                                              color: _isMenuSelected ? Colors.white : Colors.black,
+                                              color: _isMenuSelected
+                                                  ? Colors.white
+                                                  : Colors.black,
                                               fontWeight: FontWeight.w600,
                                               fontSize: 16,
                                             ),
@@ -2457,14 +2586,20 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () => setState(() => _isMenuSelected = false),
+                                      onTap: () => setState(
+                                        () => _isMenuSelected = false,
+                                      ),
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: !_isMenuSelected
                                               ? const Color(0xFF8B1A1A)
                                               : Colors.white,
-                                          borderRadius: BorderRadius.circular(30),
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
                                           border: Border.all(
                                             color: !_isMenuSelected
                                                 ? const Color(0xFF8B1A1A)
@@ -2476,7 +2611,9 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                                           child: Text(
                                             'Review',
                                             style: TextStyle(
-                                              color: !_isMenuSelected ? Colors.white : Colors.black,
+                                              color: !_isMenuSelected
+                                                  ? Colors.white
+                                                  : Colors.black,
                                               fontWeight: FontWeight.w600,
                                               fontSize: 16,
                                             ),
@@ -2491,7 +2628,10 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
 
                             const SizedBox(height: 20),
 
-                            if (_isMenuSelected) _buildMenuContent() else _buildReviewContent(),
+                            if (_isMenuSelected)
+                              _buildMenuContent()
+                            else
+                              _buildReviewContent(),
 
                             const SizedBox(height: 100),
                           ],
@@ -2515,7 +2655,10 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Alamat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text(
+            'Alamat',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 10),
           Container(
             height: 140,
@@ -2557,7 +2700,12 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
     if (_menus.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(32),
-        child: Center(child: Text('Menu belum tersedia', style: TextStyle(color: Colors.grey))),
+        child: Center(
+          child: Text(
+            'Menu belum tersedia',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
       );
     }
 
@@ -2585,7 +2733,9 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
     final isFav = menu['is_favorite'] == true;
 
     final menuIdRaw = menu['id'];
-    final menuId = (menuIdRaw is int) ? menuIdRaw : int.tryParse(menuIdRaw.toString()) ?? 0;
+    final menuId = (menuIdRaw is int)
+        ? menuIdRaw
+        : int.tryParse(menuIdRaw.toString()) ?? 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -2604,23 +2754,33 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                   child: imageUrl.isNotEmpty
                       ? Image.network(
                           imageUrl,
                           width: double.infinity,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => const Center(
-                            child: Icon(Icons.camera_alt, size: 40, color: Color(0xFF6B6B6B)),
+                            child: Icon(
+                              Icons.camera_alt,
+                              size: 40,
+                              color: Color(0xFF6B6B6B),
+                            ),
                           ),
                         )
                       : const Center(
-                          child: Icon(Icons.camera_alt, size: 40, color: Color(0xFF6B6B6B)),
+                          child: Icon(
+                            Icons.camera_alt,
+                            size: 40,
+                            color: Color(0xFF6B6B6B),
+                          ),
                         ),
                 ),
               ),
 
-              // ✅ FAVORITE MENU: dibungkus GestureDetector + kliknya tidak mengganggu card
+              // Tombol Favorite (Hati)
               Positioned(
                 top: 8,
                 right: 8,
@@ -2655,27 +2815,48 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                     children: [
                       Text(
                         name,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Rp $price',
-                        style: const TextStyle(color: Colors.black87, fontSize: 11),
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
+
+                  // --------- UPDATE BAGIAN INI (TOMBOL PLUS) ---------
                   Align(
                     alignment: Alignment.bottomRight,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 1.5),
+                    child: InkWell(
+                      onTap: () => _addMenuToHistory(
+                        menuId,
+                        price,
+                      ), // Panggil fungsi di sini
+                      borderRadius: BorderRadius.circular(
+                        20,
+                      ), // Efek ripple bulat
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 1.5),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.black,
+                          size: 18,
+                        ),
                       ),
-                      child: const Icon(Icons.add, color: Colors.black, size: 18),
                     ),
                   ),
                 ],
@@ -2700,7 +2881,9 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
     if (_reviews.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(32),
-        child: Center(child: Text('Belum ada ulasan', style: TextStyle(color: Colors.grey))),
+        child: Center(
+          child: Text('Belum ada ulasan', style: TextStyle(color: Colors.grey)),
+        ),
       );
     }
     return ListView.builder(
@@ -2738,18 +2921,28 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                   children: [
                     Text(
                       username,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                     Text(
                       rating.toString(),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   comment,
-                  style: const TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black87,
+                    height: 1.4,
+                  ),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -2770,7 +2963,7 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
         borderRadius: BorderRadius.circular(35),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withOpacity(0.4),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -2789,15 +2982,25 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
           currentIndex: 0,
           onTap: _onBottomNavTapped,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home, size: 28), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.favorite, size: 28), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.schedule, size: 28), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.person, size: 28), label: ''),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home, size: 28),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.favorite, size: 28),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.schedule, size: 28),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person, size: 28),
+              label: '',
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-
