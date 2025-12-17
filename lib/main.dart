@@ -1374,36 +1374,38 @@ class _HomePageState extends State<HomePage> {
 
   // Helper Widget untuk Item History
   Widget _buildHistoryItem(Map<String, dynamic> item) {
-    // Ambil data dari relasi (Safety check agar tidak error jika data menu dihapus)
+    // Ambil data dari relasi
     final menu = item['menus'] ?? {};
     final place = menu['places'] ?? {};
 
     final menuName = menu['name'] ?? 'Menu Dihapus';
     final placeName = place['name'] ?? 'Tempat Tidak Diketahui';
-    final menuImage = menu['image_url']; // Bisa null
+    final menuImage = menu['image_url'];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7),
+        color: Colors.white, // UBAH KE PUTIH
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200, width: 1), // TAMBAH BORDER TIPIS
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06), // Shadow lebih soft
+            blurRadius: 10, // Blur lebih luas
+            offset: const Offset(0, 4), // Arah bayangan ke bawah
+            spreadRadius: 0,
           )
         ],
       ),
       child: Row(
         children: [
-          // Gambar Menu
+          // Gambar Menu / Placeholder
           Container(
-            width: 60,
-            height: 60,
+            width: 80, // Sedikit lebih lebar sesuai gambar
+            height: 80,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: const Color(0xFFEEEEEE), // Abu-abu lebih terang (Figma style)
               borderRadius: BorderRadius.circular(12),
             ),
             child: (menuImage != null && menuImage.toString().isNotEmpty)
@@ -1412,12 +1414,15 @@ class _HomePageState extends State<HomePage> {
                     child: Image.network(
                       menuImage,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white),
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(Icons.camera_alt, color: Color(0xFF424242), size: 32),
+                      ),
                     ),
                   )
-                : const Icon(Icons.camera_alt, color: Colors.white, size: 30),
+                : const Center(
+                    // Icon kamera warna abu tua
+                    child: Icon(Icons.camera_alt, color: Color(0xFF424242), size: 32),
+                  ),
           ),
           const SizedBox(width: 16),
 
@@ -1425,30 +1430,35 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  menuName, // Menggunakan nama dari tabel menus
+                  menuName,
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF343446),
+                    fontWeight: FontWeight.bold, // Sesuai desain bold hitam
+                    color: Color(0xFF1E1E1E), 
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  placeName, // Menggunakan nama dari tabel places
-                  style: TextStyle(
+                  placeName,
+                  style: const TextStyle(
                     fontSize: 13,
-                    color: Colors.black.withOpacity(0.5),
+                    color: Color(0xFF757575), // Abu-abu medium untuk nama tempat
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8), // Jarak sedikit ke harga
                 Text(
                   _formatCurrency((item['price'] ?? 0).toDouble()),
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF343446),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E1E1E), // Harga hitam tebal
                   ),
                 ),
               ],
