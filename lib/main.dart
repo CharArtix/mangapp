@@ -799,9 +799,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // --- LOGIC HISTORY ---
-
   Future<void> fetchHistory() async {
-    // Hindari fetch ulang jika loading atau tab lain (opsional, tapi bagus untuk performa)
     setState(() => _isLoadingHistory = true);
 
     try {
@@ -811,15 +809,15 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
+      // QUERY BARU: Mengambil data history beserta detail menu dan tempatnya
       final response = await supabase
           .from('history')
-          .select()
+          .select('*, menus(*, places(*))') // <--- JOIN RELASI
           .eq('user_id', user.id)
           .order('created_at', ascending: false);
 
-      final List<Map<String, dynamic>> data = List<Map<String, dynamic>>.from(
-        response,
-      );
+      final List<Map<String, dynamic>> data =
+          List<Map<String, dynamic>>.from(response);
 
       _processHistoryData(data);
     } catch (e) {
@@ -1380,11 +1378,19 @@ class _HomePageState extends State<HomePage> {
 
   // Helper Widget untuk Item History
   Widget _buildHistoryItem(Map<String, dynamic> item) {
+    // Ambil data dari relasi (Safety check agar tidak error jika data menu dihapus)
+    final menu = item['menus'] ?? {};
+    final place = menu['places'] ?? {};
+
+    final menuName = menu['name'] ?? 'Menu Dihapus';
+    final placeName = place['name'] ?? 'Tempat Tidak Diketahui';
+    final menuImage = menu['image_url']; // Bisa null
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7), // Warna abu-abu sangat muda
+        color: const Color(0xFFF7F7F7),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1396,7 +1402,7 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Row(
         children: [
-          // Icon Camera / Gambar
+          // Gambar Menu
           Container(
             width: 60,
             height: 60,
@@ -1404,18 +1410,28 @@ class _HomePageState extends State<HomePage> {
               color: Colors.grey[300],
               borderRadius: BorderRadius.circular(12),
             ),
-            // Jika nanti ada gambar, ganti Icon dengan Image.network
-            child: const Icon(Icons.camera_alt, color: Colors.white, size: 30),
+            child: (menuImage != null && menuImage.toString().isNotEmpty)
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      menuImage,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white),
+                    ),
+                  )
+                : const Icon(Icons.camera_alt, color: Colors.white, size: 30),
           ),
           const SizedBox(width: 16),
-          
+
           // Detail Text
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item['menu_name'] ?? 'Menu Item',
+                  menuName, // Menggunakan nama dari tabel menus
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1424,7 +1440,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  item['place_name'] ?? 'Nama Tempat',
+                  placeName, // Menggunakan nama dari tabel places
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.black.withOpacity(0.5),
