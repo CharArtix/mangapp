@@ -707,6 +707,10 @@ class _HomePageState extends State<HomePage> {
   bool isLoadingHome = true;
   bool isLoadingFav = true;
   bool _isLoadingProfile = true;
+  bool _isLoadingHistory = true;
+  // List<Map<String, dynamic>> _rawHistory = [];
+  Map<String, List<Map<String, dynamic>>> _groupedHistory = {};
+  double _totalExpense = 0;
 
   @override
   void initState() {
@@ -720,6 +724,7 @@ class _HomePageState extends State<HomePage> {
     if (_selectedIndex == 1) {
       fetchFavorites();
     }
+    if (_selectedIndex == 2) fetchHistory();
     if (_selectedIndex == 3) fetchProfile();
   }
 
@@ -793,6 +798,99 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // --- LOGIC HISTORY ---
+
+  Future<void> fetchHistory() async {
+    // Hindari fetch ulang jika loading atau tab lain (opsional, tapi bagus untuk performa)
+    setState(() => _isLoadingHistory = true);
+
+    try {
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        setState(() => _isLoadingHistory = false);
+        return;
+      }
+
+      final response = await supabase
+          .from('history')
+          .select()
+          .eq('user_id', user.id)
+          .order('created_at', ascending: false);
+
+      final List<Map<String, dynamic>> data = List<Map<String, dynamic>>.from(
+        response,
+      );
+
+      _processHistoryData(data);
+    } catch (e) {
+      debugPrint("Error fetching history: $e");
+      if (mounted) setState(() => _isLoadingHistory = false);
+    }
+  }
+
+  void _processHistoryData(List<Map<String, dynamic>> data) {
+    double tempTotal = 0;
+    Map<String, List<Map<String, dynamic>>> tempGrouped = {};
+
+    final List<String> months = [
+      '',
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+
+    final now = DateTime.now();
+    final todayStr = "${now.day} ${months[now.month]} ${now.year}";
+    final yesterday = now.subtract(const Duration(days: 1));
+    final yesterdayStr =
+        "${yesterday.day} ${months[yesterday.month]} ${yesterday.year}";
+
+    for (var item in data) {
+      final price = (item['price'] ?? 0).toDouble();
+      tempTotal += price;
+
+      final date = DateTime.parse(item['created_at']).toLocal();
+      final dateKeyRaw = "${date.day} ${months[date.month]} ${date.year}";
+
+      String displayKey = dateKeyRaw;
+
+      if (dateKeyRaw == todayStr) {
+        displayKey = "Hari ini";
+      } else if (dateKeyRaw == yesterdayStr) {
+        displayKey = "Kemarin";
+      } else {
+        displayKey = "${date.day} ${months[date.month]}";
+      }
+
+      if (!tempGrouped.containsKey(displayKey)) {
+        tempGrouped[displayKey] = [];
+      }
+      tempGrouped[displayKey]!.add(item);
+    }
+
+    if (mounted) {
+      setState(() {
+        // _rawHistory = data;
+        _groupedHistory = tempGrouped;
+        _totalExpense = tempTotal;
+        _isLoadingHistory = false;
+      });
+    }
+  }
+
+  String _formatCurrency(double amount) {
+    return "Rp.${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
+  }
+
   // --- LOGIC PROFILE ---
   Future<void> fetchProfile() async {
     setState(() => _isLoadingProfile = true);
@@ -850,6 +948,7 @@ class _HomePageState extends State<HomePage> {
     if (index == 1) {
       fetchFavorites();
     }
+    if (index == 2) fetchHistory();
     if (index == 3) fetchProfile();
   }
 
@@ -1169,6 +1268,185 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // --- UI HISTORY VIEW ---
+  Widget _buildHistoryView() {
+    return Column(
+      children: [
+        // 1. Header Card Merah (Floating Card Style)
+        Container(
+          width: double.infinity,
+          // PERBAIKAN: Tambahkan Margin agar tidak mentok ke pinggir
+          margin: const EdgeInsets.all(24), 
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFFC62828),
+            // Opsional: Un-comment baris ini jika pattern sudah ada di assets
+            image: const DecorationImage(
+               image: AssetImage('assets/images/bg_pattern.png'), 
+               fit: BoxFit.cover, 
+               opacity: 1
+            ),
+            // PERBAIKAN: Radius melingkar di SEMUA sisi
+            borderRadius: BorderRadius.circular(24), 
+            // Opsional: Shadow agar terlihat mengambang
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFC62828).withOpacity(0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Total Pengeluaran",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Bulan ini",
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                _formatCurrency(_totalExpense),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 2. List History
+        Expanded(
+          child: _isLoadingHistory
+              ? const Center(child: CircularProgressIndicator())
+              : _groupedHistory.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.receipt_long, size: 60, color: Colors.grey[300]),
+                          const SizedBox(height: 10),
+                          Text("Belum ada riwayat", style: TextStyle(color: Colors.grey[500])),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      // Tambahkan padding bawah lebih besar agar tidak tertutup navbar
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                      itemCount: _groupedHistory.length,
+                      itemBuilder: (context, index) {
+                        String dateKey = _groupedHistory.keys.elementAt(index);
+                        List<Map<String, dynamic>> items = _groupedHistory[dateKey]!;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12, top: 10),
+                              child: Text(
+                                dateKey,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF343446),
+                                ),
+                              ),
+                            ),
+                            ...items.map((item) => _buildHistoryItem(item)).toList(),
+                            const SizedBox(height: 10),
+                          ],
+                        );
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  // Helper Widget untuk Item History
+  Widget _buildHistoryItem(Map<String, dynamic> item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F7F7), // Warna abu-abu sangat muda
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          // Icon Camera / Gambar
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            // Jika nanti ada gambar, ganti Icon dengan Image.network
+            child: const Icon(Icons.camera_alt, color: Colors.white, size: 30),
+          ),
+          const SizedBox(width: 16),
+          
+          // Detail Text
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['menu_name'] ?? 'Menu Item',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF343446),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item['place_name'] ?? 'Nama Tempat',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.black.withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatCurrency((item['price'] ?? 0).toDouble()),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF343446),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProfileView() {
     return Container(
       color: Colors.white, // Pastikan background putih
@@ -1367,7 +1645,7 @@ class _HomePageState extends State<HomePage> {
         bodyContent = _buildFavoritesView();
         break;
       case 2:
-        bodyContent = _buildPlaceholderView("History\n(Coming Soon)");
+        bodyContent = _buildHistoryView();
         break;
       case 3:
         bodyContent = _buildProfileView();
@@ -1376,7 +1654,7 @@ class _HomePageState extends State<HomePage> {
         bodyContent = _buildHomeView();
     }
 
-    bool isProfileTab = _selectedIndex == 3;
+    bool isProfileTab = _selectedIndex == 2 || _selectedIndex == 3;
 
     return Scaffold(
       extendBody: true,
