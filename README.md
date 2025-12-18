@@ -1,44 +1,79 @@
 # mangapp
 
-A new Flutter project.
+A Flutter application for discovering food places around campus.
 
 MANGAPP - KELOMPOK 10
-Member:
-1. Clay Amsal Sebastian Hutabarat - 5026231132 - Membuat ide judul + desain aplikasi, dan Membuat code page profile.
-2. Muhammad Rifqi Alfareza Santosa - 5026231133 - Membuat laporan bab 4, merapihkan laporan bab 1 dan 3, Membuat code page Login dan History.
-3. Muhammad Naufal Erwin Effendi - 5026231152 - Membuat desain figma aplikasi, Membuat code page Favorit.
-4. Muhammad Daniel Alfarisi - 5026231161 - Membuat laporan dan merapikan laporan, Membuat code page Detail Tempat.
-5. Daniel Sandi Bratanata Aritonang - 5026231216 - Menentukan algoritma fitur, Membuat code page Home 1 & Home 2.
-6. Davin Jonathan Tanus - 5026231131 - Menambah isi laporan dan merapikan laporan, Membuat setup supabase + code page Home 3.
 
+## Anggota Kelompok
+1. Clay Amsal Sebastian Hutabarat - 5026231132  
+   Ide judul & desain aplikasi, Page Profile  
+2. Muhammad Rifqi Alfareza Santosa - 5026231133  
+   Laporan Bab 4, perapihan Bab 1 & 3, Page Login & History  
+3. Muhammad Naufal Erwin Effendi - 5026231152  
+   Desain Figma, Page Favorit  
+4. Muhammad Daniel Alfarisi - 5026231161  
+   Laporan & perapihan laporan, Page Detail Tempat  
+5. Daniel Sandi Bratanata Aritonang - 5026231216  
+   Algoritma fitur, Page Home 1 & Home 2  
+6. Davin Jonathan Tanus - 5026231131  
+   Setup Supabase, Page Home 3  
 
-1.1 Deskripsi Ide
-“Mangapp” merupakan sebuah platform yang dibuat untuk para mahasiswa yang mencari informasi terhadap tempat makan di sekitar kampus. Aplikasi ini dapat membantu mahasiswa dalam menemukan tempat makan yang sesuai dengan preferensi dan anggaran mereka. Aplikasi ini menyediakan informasi lengkap mengenai warung makan, restoran, dan kafe di sekitar kampus. Pengguna dapat dengan mudah mencari tempat makan berdasarkan jenis masakan, kisaran harga, atau jarak dari lokasi mereka. Dengan fitur ulasan dan peringkat dari sesama mahasiswa, akan membantu pengguna menilai popularitas dan kualitas suatu tempat makan sehingga memungkinkan pengguna untuk membuat keputusan yang terinformasi.
+## Deskripsi Ide
+Mangapp adalah platform untuk membantu mahasiswa menemukan tempat makan di sekitar kampus sesuai preferensi dan anggaran. Aplikasi ini menyediakan informasi warung makan, restoran, dan kafe lengkap dengan rating, ulasan mahasiswa, serta fitur pencarian berdasarkan harga, jarak, dan kategori makanan.
 
-1.2 Inovasi Ide
-“Mangapp” memiliki beberapa fitur di dalamnya yang menunjang dalam
-merekomendasikan makanan. Mangapp juga menyediakan fitur unggulan yang menjadi pembeda dari platform sejenis seperti “TripAdvisor”, ulasannya yang langsung dari kalangan mahasiswa sehingga lebih relevan dengan pengguna dan terintegrasi dengan TikTok, navigasi peta, history pengeluaran pengguna, dan fitur hidden gem. Dalam mengembangkan aplikasi mencari makanan terdekat, kami mengusulkan inovasi yang tidak hanya mempertimbangkan lokasi fisik, tetapi juga memperhatikan preferensi dan kebutuhan unik setiap pengguna. Berikut adalah rincian beberapa fitur inovatif yang dapat diintegrasikan ke dalam aplikasi tersebut:
-- Sistem Rekomendasi: Aplikasi ini dapat menggunakan weighted model  untuk memahami preferensi makanan pengguna berdasarkan histori pencarian, ulasan, dan pemesanan sebelumnya. Dengan mempertimbangkan konteks seperti rating/review, jarak, waktu hari, dan hari hari khusus, aplikasi dapat memberikan rekomendasi yang lebih relevan dan menarik.
+## Inovasi Fitur
+- Sistem Rekomendasi: Menggunakan weighted model berdasarkan rating, review, jarak, waktu, dan histori user  
+- Rating & Ulasan: Penilaian detail rasa, pelayanan, suasana, dan value  
+- Maps: Integrasi peta untuk navigasi lokasi tempat makan  
+- Hidden Gem: Menampilkan tempat makan tersembunyi dengan kualitas tinggi  
+- Video Review (TikTok): Integrasi konten video review  
+- History: Riwayat pembelian dan pengeluaran user  
 
-- Rating dan ulasan: Selain memberikan rating umum, pengguna dapat memberikan penilaian lebih spesifik pada aspek-aspek seperti rasa, pelayanan, suasana, dan nilai uang. Sistem ini memberikan informasi yang lebih terperinci kepada pengguna yang mencari pengalaman makan yang spesifik.
-
-- Maps: Integrasi peta untuk memberikan pandangan lebih realistis tentang lokasi restoran dan lingkungan sekitarnya. Pengguna dapat dengan mudah mengenali bangunan dan arah dengan lebih jelas.
-
-- Hidden Gem: Menggunakan algoritma cerdas yang menyoroti tempat makan tersembunyi atau kurang dikenal yang mungkin sesuai dengan preferensi unik pengguna. Pencarian berdasarkan cerita atau pengalaman pengguna di tempat-tempat makan yang kurang dikenal. Pengguna (user) dapat melakukan ulasan tentang hidden gems, untuk tempat yang sepi pengunjung tetapi dengan makanan yang sangat enak.
-
-- Video Review (Tiktok): Pada aplikasi ini akan terintegrasi dengan Tiktok, yang dimana tiktok sekarang menjadi sosial media yang banyak orang gunakan yang membuat orang mau mencobanya tetapi tidak tau tempat nya jauh atau tidak, benar enak atau tidak.
-
-- History: Pada fitur ini user dapat mengetahui bahwa mereka membeli apa, dimana, dan berapa banyak pengeluaran user pada hari ini
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Struktur Folder
+```bash
+.vscode/
+android/
+assets/images/
+ios/
+lib/
+linux/
+macos/
+test/
+web/
+windows/
+.gitignore
+.metadata
+README.md
+analysis_options.yaml
+devtools_options.yaml
+pubspec.lock
+pubspec.yaml
+```
+## Teknologi
+- Flutter  
+- Supabase (Auth & Database)  
+- Figma (UI/UX Design)  
+## Clone
+```bash
+git clone https://github.com/CharArtix/mangapp.git
+```
+## Install Dependencies
+Tambahkan dependencies berikut pada `pubspec.yaml`:
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  supabase_flutter: ^2.0.0
+```
+lalu jalankan 
+```bash
+flutter pub get
+```
+tambahkan 
+```bash
+await Supabase.initialize(
+  url: 'https://xxxxxxx.supabase.co',
+  anonKey: 'YOUR_ANON_KEY',
+);
+```
