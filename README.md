@@ -22,11 +22,9 @@ MANGAPP - KELOMPOK 10
 Mangapp adalah platform untuk membantu mahasiswa menemukan tempat makan di sekitar kampus sesuai preferensi dan anggaran. Aplikasi ini menyediakan informasi warung makan, restoran, dan kafe lengkap dengan rating, ulasan mahasiswa, serta fitur pencarian berdasarkan harga, jarak, dan kategori makanan.
 
 ## Inovasi Fitur
-- Sistem Rekomendasi: Menggunakan weighted model berdasarkan rating, review, jarak, waktu, dan histori user  
+- Sistem Rekomendasi: Berdasarkan rating dan favorit 
 - Rating & Ulasan: Penilaian detail rasa, pelayanan, suasana, dan value  
-- Maps: Integrasi peta untuk navigasi lokasi tempat makan  
 - Hidden Gem: Menampilkan tempat makan tersembunyi dengan kualitas tinggi  
-- Video Review (TikTok): Integrasi konten video review  
 - History: Riwayat pembelian dan pengeluaran user  
 
 ## Struktur Folder
