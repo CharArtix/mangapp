@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+
 // -----------------------------------------------------------------------------
 // MAIN
 // -----------------------------------------------------------------------------
@@ -2343,7 +2344,20 @@ class _PlaceListPageState extends State<PlaceListPage> {
                             children: [
                               _buildSearch(),
 
-                              _sectionTitle("Rekomendasi Mahasiswa", onArrowTap: () {}),
+                              _sectionTitle(
+  "Rekomendasi Mahasiswa",
+  onArrowTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RecommendationPage(
+          initialUniversityId: widget.universityId,
+          initialUniversityName: widget.universityName,
+        ),
+      ),
+    );
+  },
+),
                               _buildHorizontalList(rekom),
 
                               const SizedBox(height: 14),
@@ -2363,6 +2377,644 @@ class _PlaceListPageState extends State<PlaceListPage> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class RecommendationPage extends StatefulWidget {
+  final int? initialUniversityId;
+  final String? initialUniversityName;
+
+  const RecommendationPage({
+    super.key,
+    this.initialUniversityId,
+    this.initialUniversityName,
+  });
+
+  @override
+  State<RecommendationPage> createState() => _RecommendationPageState();
+}
+
+class _RecommendationPageState extends State<RecommendationPage> {
+  final supabase = Supabase.instance.client;
+
+  List<Map<String, dynamic>> _places = [];
+  bool _loading = true;
+
+  List<String> _categories = [];
+  String _selectedCategory = 'Semua';
+
+  List<Map<String, dynamic>> _universities = [];
+  int? _selectedUniversityId;
+  String _selectedUniversityName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedUniversityId = widget.initialUniversityId;
+    _selectedUniversityName = widget.initialUniversityName ?? '';
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    setState(() => _loading = true);
+    try {
+      await _loadUniversities();
+      await _loadCategories();
+      await _loadPlaces();
+    } finally {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadUniversities() async {
+    try {
+      final res = await supabase.from('universities').select().order('name');
+      final list = (res as List).cast<Map<String, dynamic>>().toList();
+
+      if (!mounted) return;
+      setState(() {
+        _universities = list;
+
+        // set default kalau belum dipilih
+        if (_selectedUniversityId == null && list.isNotEmpty) {
+          final first = list.first;
+          final idRaw = first['id'];
+          _selectedUniversityId =
+              (idRaw is int) ? idRaw : int.tryParse(idRaw.toString());
+          _selectedUniversityName = (first['name'] ?? 'Pilih Lokasi').toString();
+        }
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      // tabel jenisresto: kolom nama
+      final res = await supabase.from('jenisresto').select('nama');
+      final list = (res as List).cast<Map<String, dynamic>>().toList();
+
+      final names = <String>[];
+      for (final item in list) {
+        final n = item['nama']?.toString().trim();
+        if (n != null && n.isNotEmpty) names.add(n);
+      }
+
+      final uniq = names.toSet().toList();
+
+      if (!mounted) return;
+      setState(() {
+        _categories = ['Semua', ...uniq];
+        _selectedCategory = 'Semua';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _categories = ['Semua'];
+        _selectedCategory = 'Semua';
+      });
+    }
+  }
+
+  Future<void> _loadPlaces() async {
+    setState(() => _loading = true);
+
+    try {
+      final user = supabase.auth.currentUser;
+
+      // join favorites supaya bisa hitung like + cek user favorit
+      final base = supabase.from('places').select('''
+        *,
+        favorites!left(user_id)
+      ''');
+
+      final res = (_selectedUniversityId != null)
+          ? await base
+              .eq('university_id', _selectedUniversityId!)
+              .order('rating', ascending: false)
+          : await base.order('rating', ascending: false);
+
+      final List<Map<String, dynamic>> places = [];
+
+      for (final item in (res as List).cast<Map<String, dynamic>>()) {
+        final favs = (item['favorites'] is List)
+            ? List<Map<String, dynamic>>.from(item['favorites'])
+            : <Map<String, dynamic>>[];
+
+        final favCount = favs.length;
+        final isFav = (user != null)
+            ? favs.any((f) => f['user_id'] == user.id)
+            : false;
+
+        final cleaned = Map<String, dynamic>.from(item);
+        cleaned['favorites_count'] = favCount;
+        cleaned['is_favorite'] = isFav;
+
+        places.add(cleaned);
+      }
+
+      // filter kategori (karena di schema places belum ada kolom kategori,
+      // kita filter by teks di name/description)
+      final filtered = (_selectedCategory != 'Semua')
+          ? places.where((p) {
+              final pname = (p['name'] ?? '').toString().toLowerCase();
+              final pdesc = (p['description'] ?? '').toString().toLowerCase();
+              final term = _selectedCategory.toLowerCase();
+              return pname.contains(term) || pdesc.contains(term);
+            }).toList()
+          : places;
+
+      if (!mounted) return;
+      setState(() => _places = filtered);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error load places: $e')),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _toggleFavorite(int placeId) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan login terlebih dahulu')),
+      );
+      return;
+    }
+
+    final idx = _places.indexWhere((p) => p['id'] == placeId);
+    if (idx == -1) return;
+
+    final currentlyFav = _places[idx]['is_favorite'] == true;
+
+    // optimistic UI
+    setState(() {
+      _places[idx]['is_favorite'] = !currentlyFav;
+      _places[idx]['favorites_count'] =
+          (_places[idx]['favorites_count'] ?? 0) + (currentlyFav ? -1 : 1);
+    });
+
+    try {
+      if (!currentlyFav) {
+        await supabase.from('favorites').insert({
+          'user_id': user.id,
+          'place_id': placeId,
+        });
+      } else {
+        await supabase
+            .from('favorites')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('place_id', placeId);
+      }
+    } catch (e) {
+      // revert UI kalau gagal
+      if (!mounted) return;
+      setState(() {
+        _places[idx]['is_favorite'] = currentlyFav;
+        _places[idx]['favorites_count'] =
+            (_places[idx]['favorites_count'] ?? 0) + (currentlyFav ? 1 : -1);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error toggle favorite: $e')),
+      );
+    }
+  }
+
+  void _showUniversitySelector() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          minChildSize: 0.35,
+          maxChildSize: 0.95,
+          builder: (_, controller) {
+            return Column(
+              children: [
+                const SizedBox(height: 8),
+                const Text(
+                  'Pilih Universitas',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView.builder(
+                    controller: controller,
+                    itemCount: _universities.length,
+                    itemBuilder: (_, i) {
+                      final u = _universities[i];
+                      final idRaw = u['id'];
+                      final id =
+                          (idRaw is int) ? idRaw : int.tryParse(idRaw.toString());
+                      final name = (u['name'] ?? '').toString();
+                      final selected = id == _selectedUniversityId;
+
+                      return ListTile(
+                        title: Text(name),
+                        trailing: selected
+                            ? const Icon(Icons.check, color: Color(0xFFA22523))
+                            : null,
+                        onTap: () async {
+                          Navigator.of(ctx).pop();
+                          setState(() {
+                            _selectedUniversityId = id;
+                            _selectedUniversityName = name;
+                          });
+                          await _loadPlaces();
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCategoryChips() {
+    if (_categories.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemCount: _categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final cat = _categories[i];
+          final isActive = cat == _selectedCategory;
+
+          return GestureDetector(
+            onTap: () async {
+              setState(() => _selectedCategory = cat);
+              await _loadPlaces();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isActive ? const Color(0xFFAA2623) : Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: const Color(0xFFAA2623)),
+              ),
+              child: Center(
+                child: Text(
+                  cat,
+                  style: TextStyle(
+                    color: isActive ? Colors.white : const Color(0xFFAA2623),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPlaceCard(Map<String, dynamic> place) {
+    final name = (place['name'] ?? '').toString();
+    final price = (place['price_range'] ?? '').toString();
+    final address = (place['address'] ?? '').toString();
+    final rating = (place['rating'] ?? '').toString();
+    final imageUrl = (place['image_url'] ?? '').toString().trim();
+    final favoritesCount = (place['favorites_count'] ?? 0);
+    final isFav = place['is_favorite'] == true;
+
+    final idRaw = place['id'];
+    final placeId = (idRaw is int) ? idRaw : int.tryParse(idRaw.toString()) ?? 0;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DetailTempatPage(place: place),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 2,
+        color: Colors.white, // ✅ paksa putih
+        surfaceTintColor: Colors.transparent, // ✅ hilang tint merah/pink M3
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              // image + rating badge
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 84,
+                      height: 84,
+                      color: Colors.grey.shade200,
+                      child: imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.camera_alt_outlined,
+                                size: 36,
+                                color: Colors.grey,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.camera_alt_outlined,
+                              size: 36,
+                              color: Colors.grey,
+                            ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -6,
+                    left: -6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: Color(0xFFF4B33A),
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            rating,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+
+              // details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(price, style: const TextStyle(color: Colors.black54)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: Colors.black54,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            address,
+                            style: const TextStyle(color: Colors.black54),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '$favoritesCount orang menyukai',
+                      style: const TextStyle(
+                        color: Colors.black38,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // favorite btn
+              IconButton(
+                onPressed: () => _toggleFavorite(placeId),
+                icon: Icon(
+                  isFav ? Icons.favorite : Icons.favorite_border,
+                  color: isFav ? const Color(0xFFF94931) : Colors.black54,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Navigasi navbar bawah
+  void _onBottomNavTapped(int index) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => HomePage(initialIndex: index)),
+      (route) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBody: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE53935), Color(0xFFC62828)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // TOP BAR lokasi + back
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                child: InkWell(
+                  onTap: _showUniversitySelector,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFB61C1C),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(Icons.arrow_back,
+                              color: Colors.white),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.location_on, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _selectedUniversityName.isNotEmpty
+                                ? _selectedUniversityName
+                                : 'Pilih Lokasi',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Icon(Icons.keyboard_arrow_down,
+                            color: Colors.white),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // CONTENT
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Rekomendasi Mahasiswa',
+                              style: TextStyle(
+                                color: Color(0xFF343446),
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildCategoryChips(),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: _loading
+                            ? const Center(child: CircularProgressIndicator())
+                            : RefreshIndicator(
+                                onRefresh: _loadPlaces,
+                                child: ListView.builder(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(12, 0, 12, 80),
+                                  itemCount: _places.length,
+                                  itemBuilder: (_, i) =>
+                                      _buildPlaceCard(_places[i]),
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      // ✅ FIX 1: bawah navbar putih (nggak merah)
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                height: 70,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFA22523).withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: BottomNavigationBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  selectedItemColor: Colors.white,
+                  unselectedItemColor: Colors.white.withOpacity(0.5),
+                  showSelectedLabels: false,
+                  showUnselectedLabels: false,
+                  type: BottomNavigationBarType.fixed,
+                  currentIndex: 0,
+                  onTap: _onBottomNavTapped,
+                  items: const [
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.home_outlined),
+                      label: '',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.favorite_border),
+                      label: '',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.history_toggle_off),
+                      label: '',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.person_outline),
+                      label: '',
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
