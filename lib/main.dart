@@ -1779,12 +1779,27 @@ class _PlaceListPageState extends State<PlaceListPage> {
 
   List<Map<String, dynamic>> places = [];
   bool isLoading = true;
+
+  // untuk bottom nav di page ini
   int bottomIndex = 0;
+
+  // search (opsional, biar UI sama)
+  final TextEditingController _searchController = TextEditingController();
+  String _query = "";
 
   @override
   void initState() {
     super.initState();
     fetchPlaces();
+    _searchController.addListener(() {
+      setState(() => _query = _searchController.text.trim().toLowerCase());
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchPlaces() async {
@@ -1820,11 +1835,6 @@ class _PlaceListPageState extends State<PlaceListPage> {
 
         loadedPlaces.add(cleaned);
       }
-
-      loadedPlaces.sort(
-        (a, b) =>
-            (b['favorite_count'] as int).compareTo(a['favorite_count'] as int),
-      );
 
       setState(() {
         places = loadedPlaces;
@@ -1873,9 +1883,8 @@ class _PlaceListPageState extends State<PlaceListPage> {
       setState(() {
         places[idx]['is_favorite'] = currentlyFav;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -1887,198 +1896,284 @@ class _PlaceListPageState extends State<PlaceListPage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              height: 70,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE53935).withOpacity(0.95),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: BottomNavigationBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                selectedItemColor: Colors.white,
-                unselectedItemColor: Colors.white.withOpacity(0.5),
-                showSelectedLabels: false,
-                showUnselectedLabels: false,
-                type: BottomNavigationBarType.fixed,
-                currentIndex: bottomIndex,
-                onTap: _onBottomNavTapped,
-                items: [
-                  BottomNavigationBarItem(
-                    icon: Icon(
-                      bottomIndex == 0 ? Icons.home : Icons.home_outlined,
-                    ),
-                    label: '',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(
-                      bottomIndex == 1 ? Icons.favorite : Icons.favorite_border,
-                    ),
-                    label: '',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(
-                      bottomIndex == 2
-                          ? Icons.history
-                          : Icons.history_toggle_off,
-                    ),
-                    label: '',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(
-                      bottomIndex == 3 ? Icons.person : Icons.person_outline,
-                    ),
-                    label: '',
-                  ),
-                ],
+  // ---------------------- UI HELPERS ----------------------
+
+  List<Map<String, dynamic>> _filteredPlaces() {
+    if (_query.isEmpty) return places;
+    return places.where((p) {
+      final name = (p['name'] ?? '').toString().toLowerCase();
+      return name.contains(_query);
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _recommended(List<Map<String, dynamic>> data) {
+    final copy = List<Map<String, dynamic>>.from(data);
+    copy.sort((a, b) {
+      final fa = (a['favorite_count'] ?? 0) as int;
+      final fb = (b['favorite_count'] ?? 0) as int;
+      if (fb != fa) return fb.compareTo(fa);
+      final ra = double.tryParse((a['rating'] ?? 0).toString()) ?? 0;
+      final rb = double.tryParse((b['rating'] ?? 0).toString()) ?? 0;
+      return rb.compareTo(ra);
+    });
+    return copy.take(6).toList();
+  }
+
+  List<Map<String, dynamic>> _hiddenGems(List<Map<String, dynamic>> data) {
+    // "Hidden Gem": rating tinggi tapi favorite_count lebih kecil
+    final gems = data.where((p) {
+      final rating = double.tryParse((p['rating'] ?? 0).toString()) ?? 0;
+      final fav = (p['favorite_count'] ?? 0) as int;
+      return rating >= 4.5 && fav <= 3;
+    }).toList();
+
+    // fallback kalau kosong: ambil rating tinggi setelah rekomendasi
+    if (gems.isEmpty) {
+      final copy = List<Map<String, dynamic>>.from(data);
+      copy.sort((a, b) {
+        final ra = double.tryParse((a['rating'] ?? 0).toString()) ?? 0;
+        final rb = double.tryParse((b['rating'] ?? 0).toString()) ?? 0;
+        return rb.compareTo(ra);
+      });
+      return copy.take(6).toList();
+    }
+
+    gems.sort((a, b) {
+      final ra = double.tryParse((a['rating'] ?? 0).toString()) ?? 0;
+      final rb = double.tryParse((b['rating'] ?? 0).toString()) ?? 0;
+      return rb.compareTo(ra);
+    });
+    return gems.take(6).toList();
+  }
+
+  Widget _buildTopBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFB61C1C),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: const Icon(Icons.arrow_back, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            const Icon(Icons.location_on, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.universityName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
-        ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE53935), Color(0xFFC62828)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFB61C1C),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.location_on, color: Colors.white),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          widget.universityName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(32),
-                    ),
-                  ),
-                  child: isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  25,
-                                  20,
-                                  10,
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE6E6E6),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Row(
-                                    children: const [
-                                      Icon(Icons.search, color: Colors.black54),
-                                      SizedBox(width: 10),
-                                      Text(
-                                        "Cari makanan atau tempat",
-                                        style: TextStyle(color: Colors.black54),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              _buildSection("Lainnya"),
-                              const SizedBox(height: 14),
-                              _buildVerticalList(),
-                              const SizedBox(height: 30),
-                            ],
-                          ),
-                        ),
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSection(String title, {VoidCallback? onPressed}) {
+  Widget _buildSearch() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEDEDED),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.search, color: Colors.black54),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: "Cari makanan atau tempat",
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, {VoidCallback? onArrowTap}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
       child: Row(
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
           ),
-          const Spacer(),
+          if (onArrowTap != null)
+            GestureDetector(
+              onTap: onArrowTap,
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE53935),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildVerticalList() {
+  Widget _buildHorizontalList(List<Map<String, dynamic>> data) {
+    if (data.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
+        child: Text("Belum ada data", style: TextStyle(color: Colors.black54)),
+      );
+    }
+
+    return SizedBox(
+      height: 190,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        scrollDirection: Axis.horizontal,
+        itemCount: data.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 14),
+        itemBuilder: (_, i) => _miniCard(data[i]),
+      ),
+    );
+  }
+
+  Widget _miniCard(Map<String, dynamic> place) {
+    final imageUrl = (place['image_url'] ?? '').toString();
+    final name = (place['name'] ?? 'Nama Tempat').toString();
+    final price = (place['price_range'] ?? '').toString();
+    final rating = (place['rating'] ?? '-').toString();
+    final isFav = place['is_favorite'] == true;
+    final placeId = place['id'];
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => DetailTempatPage(place: place)),
+        );
+      },
+      child: Container(
+        width: 140,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    height: 90,
+                    width: double.infinity,
+                    color: Colors.grey[300],
+                    child: imageUrl.isNotEmpty
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.image, color: Colors.grey),
+                          )
+                        : const Icon(Icons.image, color: Colors.grey),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _toggleFavorite(placeId),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isFav ? Icons.favorite : Icons.favorite_border,
+                        size: 18,
+                        color: const Color(0xFFE53935),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              name,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              price,
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.star, size: 14, color: Colors.orange),
+                const SizedBox(width: 4),
+                Text(
+                  rating,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerticalList(List<Map<String, dynamic>> data) {
+    if (data.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Text("Belum ada tempat", style: TextStyle(color: Colors.black54)),
+      );
+    }
+
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: places.length,
-      itemBuilder: (_, i) => _buildVerticalCard(places[i]),
+      itemCount: data.length,
+      itemBuilder: (_, i) => _verticalCard(data[i]),
     );
   }
 
-  Widget _buildVerticalCard(Map<String, dynamic> place) {
-    final imageUrl = place["image_url"]?.toString();
+  Widget _verticalCard(Map<String, dynamic> place) {
+    final imageUrl = (place["image_url"] ?? "").toString();
     final isFav = place['is_favorite'] == true;
     final placeId = place['id'];
 
@@ -2095,11 +2190,12 @@ class _PlaceListPageState extends State<PlaceListPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.4),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -2111,16 +2207,14 @@ class _PlaceListPageState extends State<PlaceListPage> {
                 height: 70,
                 width: 70,
                 color: Colors.grey[200],
-                child: (imageUrl != null && imageUrl.isNotEmpty)
+                child: imageUrl.isNotEmpty
                     ? Image.network(
                         imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.image_not_supported,
-                          color: Colors.grey,
-                        ),
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.image, color: Colors.grey),
                       )
-                    : const Icon(Icons.image_not_supported, color: Colors.grey),
+                    : const Icon(Icons.image, color: Colors.grey),
               ),
             ),
             const SizedBox(width: 14),
@@ -2137,10 +2231,7 @@ class _PlaceListPageState extends State<PlaceListPage> {
                   ),
                   Text(
                     place["name"]?.toString() ?? "Nama Tempat",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   Text(
                     place["price_range"]?.toString() ?? "",
@@ -2157,6 +2248,122 @@ class _PlaceListPageState extends State<PlaceListPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------- BUILD ----------------------
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _filteredPlaces();
+    final rekom = _recommended(filtered);
+    final gems = _hiddenGems(filtered);
+
+    return Scaffold(
+      extendBody: true,
+      backgroundColor: Colors.white,
+
+      // ✅ biar bawah nav gak merah (sesuai request kamu)
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                height: 70,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFA22523).withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: BottomNavigationBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  selectedItemColor: Colors.white,
+                  unselectedItemColor: Colors.white.withOpacity(0.5),
+                  showSelectedLabels: false,
+                  showUnselectedLabels: false,
+                  type: BottomNavigationBarType.fixed,
+                  currentIndex: bottomIndex,
+                  onTap: _onBottomNavTapped,
+                  items: [
+                    BottomNavigationBarItem(
+                      icon: Icon(bottomIndex == 0 ? Icons.home : Icons.home_outlined),
+                      label: '',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(bottomIndex == 1 ? Icons.favorite : Icons.favorite_border),
+                      label: '',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(bottomIndex == 2 ? Icons.history : Icons.history_toggle_off),
+                      label: '',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(bottomIndex == 3 ? Icons.person : Icons.person_outline),
+                      label: '',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+
+      body: Container(
+        // ✅ background merah atas seperti screenshot
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE53935), Color(0xFFC62828)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildTopBar(),
+
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                  ),
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSearch(),
+
+                              _sectionTitle("Rekomendasi Mahasiswa", onArrowTap: () {}),
+                              _buildHorizontalList(rekom),
+
+                              const SizedBox(height: 14),
+
+                              _sectionTitle("Hidden Gem"),
+                              _buildHorizontalList(gems),
+
+                              const SizedBox(height: 18),
+
+                              _sectionTitle("Lainnya"),
+                              _buildVerticalList(filtered),
+
+                              const SizedBox(height: 110), // biar gak ketutup navbar
+                            ],
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
