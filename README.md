@@ -6,17 +6,11 @@ MANGAPP - KELOMPOK 10
 
 ## Anggota Kelompok
 1. Clay Amsal Sebastian Hutabarat - 5026231132  
-   Ide judul & desain aplikasi, Page Profile  
-2. Muhammad Rifqi Alfareza Santosa - 5026231133  
-   Laporan Bab 4, perapihan Bab 1 & 3, Page Login & History  
+2. Muhammad Rifqi Alfareza Santosa - 5026231133    
 3. Muhammad Naufal Erwin Effendi - 5026231152  
-   Desain Figma, Page Favorit  
-4. Muhammad Daniel Alfarisi - 5026231161  
-   Laporan & perapihan laporan, Page Detail Tempat  
+4. Muhammad Daniel Alfarisi - 5026231161   
 5. Daniel Sandi Bratanata Aritonang - 5026231216  
-   Algoritma fitur, Page Home 1 & Home 2  
 6. Davin Jonathan Tanus - 5026231131  
-   Setup Supabase, Page Home 3  
 
 ## Deskripsi Ide
 Mangapp adalah platform untuk membantu mahasiswa menemukan tempat makan di sekitar kampus sesuai preferensi dan anggaran. Aplikasi ini menyediakan informasi warung makan, restoran, dan kafe lengkap dengan rating, ulasan mahasiswa, serta fitur pencarian berdasarkan harga, jarak, dan kategori makanan.
