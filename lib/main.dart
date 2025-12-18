@@ -2343,45 +2343,44 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
   }
 
   Future<void> _addMenuToHistory(int menuId, dynamic priceRaw) async {
-      final user = supabase.auth.currentUser;
-      if (user == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Silakan login terlebih dahulu')),
-        );
-        return;
-      }
-
-      // Pastikan harga dalam format angka
-      final price = (priceRaw is num)
-          ? priceRaw
-          : double.tryParse(priceRaw.toString()) ?? 0;
-
-      try {
-        await supabase.from('history').insert({
-          'user_id': user.id,
-          'menu_id': menuId,
-          'price': price, // Simpan harga saat transaksi
-          // 'created_at': default now() di database
-        });
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Berhasil ditambahkan ke Riwayat!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 1),
-          ),
-        );
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal menambah riwayat: $e')));
-      }
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan login terlebih dahulu')),
+      );
+      return;
     }
 
-  // ---------------- REVIEW (punyamu, biarkan) ----------------
+    // Pastikan harga dalam format angka
+    final price = (priceRaw is num)
+        ? priceRaw
+        : double.tryParse(priceRaw.toString()) ?? 0;
+
+    try {
+      await supabase.from('history').insert({
+        'user_id': user.id,
+        'menu_id': menuId,
+        'price': price, // Simpan harga saat transaksi
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Berhasil ditambahkan ke Riwayat!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 1),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menambah riwayat: $e')),
+      );
+    }
+  }
+
+  // ---------------- REVIEW ----------------
   Future<void> _fetchReviews() async {
     try {
       final res = await supabase
@@ -2779,8 +2778,6 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                         ),
                 ),
               ),
-
-              // Tombol Favorite (Hati)
               Positioned(
                 top: 8,
                 right: 8,
@@ -2832,18 +2829,11 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                       ),
                     ],
                   ),
-
-                  // --------- UPDATE BAGIAN INI (TOMBOL PLUS) ---------
                   Align(
                     alignment: Alignment.bottomRight,
                     child: InkWell(
-                      onTap: () => _addMenuToHistory(
-                        menuId,
-                        price,
-                      ), // Panggil fungsi di sini
-                      borderRadius: BorderRadius.circular(
-                        20,
-                      ), // Efek ripple bulat
+                      onTap: () => _addMenuToHistory(menuId, price),
+                      borderRadius: BorderRadius.circular(20),
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
@@ -2868,35 +2858,228 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
     );
   }
 
-  // review part (aku minimal biar compile)
+  // ================= REVIEW CONTENT (UPDATED STYLE) =================
   Widget _buildReviewContent() {
-    if (_isLoadingReview) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(color: Color(0xFF8B1A1A)),
+    // Data ulasan buatan (dummy) untuk ditampilkan jika tidak ada review dari database
+    final List<Map<String, dynamic>> dummyReviews = [
+      {
+        'profiles': {'username': 'account178465'},
+        'rating': 5,
+        'comment': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et...'
+      },
+      {
+        'profiles': {'username': 'account178465'},
+        'rating': 5,
+        'comment': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et...'
+      },
+      {
+        'profiles': {'username': 'account178465'},
+        'rating': 5,
+        'comment': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et...'
+      },
+    ];
+
+    // Gunakan review dari database jika ada, jika tidak gunakan dummy
+    final displayReviews = _reviews.isNotEmpty ? _reviews : dummyReviews;
+
+    return Column(
+      children: [
+        // Video Review Section dengan Rating Summary
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Video Review',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Video Thumbnail
+                  Container(
+                    width: 110,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.play_circle_filled,
+                      color: Colors.white,
+                      size: 50,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Rating Section
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // Beri Rating Box
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B1A1A),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Beri rating tempat ini',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(
+                                  5,
+                                  (index) => const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 2,
+                                    ),
+                                    child: Icon(
+                                      Icons.star,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Rating Summary Box
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE0E0E0)),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    widget.place['rating']
+                                            ?.toStringAsFixed(1) ??
+                                        '4.8',
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        _buildRatingBar(5, 0.8),
+                                        _buildRatingBar(4, 0.6),
+                                        _buildRatingBar(3, 0.3),
+                                        _buildRatingBar(2, 0.1),
+                                        _buildRatingBar(1, 0.05),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(
+                                  5,
+                                  (index) => const Icon(
+                                    Icons.star,
+                                    color: Color(0xFFFF8A00),
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      );
-    }
-    if (_reviews.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(32),
-        child: Center(
-          child: Text('Belum ada ulasan', style: TextStyle(color: Colors.grey)),
-        ),
-      );
-    }
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: _reviews.length,
-      itemBuilder: (context, index) => _buildReviewItem(_reviews[index]),
+        const SizedBox(height: 20),
+
+        // Reviews List - Tampilkan loading, dummy, atau data asli
+        if (_isLoadingReview)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(
+                color: Color(0xFF8B1A1A),
+              ),
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: displayReviews.length,
+            itemBuilder: (context, index) => _buildReviewItem(displayReviews[index]),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRatingBar(int stars, double percentage) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Row(
+        children: [
+          Text('$stars', style: const TextStyle(fontSize: 10)),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Stack(
+              children: [
+                Container(
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0E0E0),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                FractionallySizedBox(
+                  widthFactor: percentage,
+                  child: Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF8A00),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildReviewItem(Map<String, dynamic> review) {
-    final username = review['profiles']?['username'] ?? 'account';
+    final username = review['profiles']?['username'] ?? 'account178465';
     final rating = review['rating'] ?? 0;
     final comment = review['comment'] ?? 'Tidak ada komentar';
 
@@ -2919,19 +3102,38 @@ class _DetailTempatPageState extends State<DetailTempatPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                    Expanded(
+                      child: Text(
+                        username,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
-                    Text(
-                      rating.toString(),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: List.generate(
+                            rating > 5 ? 5 : rating,
+                            (index) => const Icon(
+                              Icons.star,
+                              color: Color(0xFFFF8A00),
+                              size: 14,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          rating.toString(),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
